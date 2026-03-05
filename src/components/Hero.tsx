@@ -15,7 +15,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-[520px] flex items-center justify-center pt-24 pb-16 px-4 sm:px-5 md:px-6 lg:px-8">
+    <section className="relative min-h-[480px] flex items-start md:items-center justify-center pt-24 pb-16 px-4 sm:px-5 md:px-6 lg:px-8">
       <div className="absolute inset-0">
         <img
           src="https://images.unsplash.com/photo-1528181304800-259b08848526?w=1920&q=80"
@@ -25,14 +25,16 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/55" />
       </div>
 
-      <div className="relative z-10 w-full max-w-3xl text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-lg mb-8">
-          Discover & book tours in Thailand
+      <div className="relative z-10 w-full max-w-3xl mt-4 md:mt-0 text-left md:text-center">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-lg mb-4 sm:mb-6 leading-tight">
+          ค้นพบ & จอง
+          <br className="hidden sm:block" />
+          กิจกรรมน่าทำในประเทศไทย
         </h1>
 
         <form
           onSubmit={handleSearch}
-          className="flex bg-white rounded-full shadow-xl max-w-xl mx-auto overflow-hidden border border-slate-200/80 focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-shadow"
+          className="flex bg-white rounded-full shadow-xl max-w-xl w-full mx-auto md:mx-auto overflow-hidden border border-slate-200/80 focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-shadow"
         >
           <input
             type="text"
