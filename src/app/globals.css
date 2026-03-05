@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #dbeafe;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  @apply antialiased text-slate-800 bg-white;
+  overflow-x: hidden;
+  min-width: 0;
+}
