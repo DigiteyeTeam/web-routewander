@@ -64,17 +64,6 @@ export default function ActivityPage() {
   const { addItem } = useCart();
   const router = useRouter();
 
-  const hasOptions = activity.options && activity.options.length > 0;
-  const selectedOption = hasOptions ? activity.options?.[selectedOptionIndex] : null;
-  const displayPrice = selectedOption
-    ? selectedOption.pricePerGroup
-      ? selectedOption.price
-      : selectedOption.price * travelers
-    : activity.priceFrom * travelers;
-  const priceLabel = selectedOption?.pricePerGroup ? "ต่อกลุ่ม" : "ต่อคน";
-  const canGoToCart = date.trim() !== "";
-  const optionTitleForCart = selectedOption?.title ?? activity.title;
-
   if (!activity) {
     return (
       <>
@@ -90,6 +79,16 @@ export default function ActivityPage() {
     );
   }
 
+  const hasOptions = activity.options && activity.options.length > 0;
+  const selectedOption = hasOptions ? activity.options?.[selectedOptionIndex] : null;
+  const displayPrice = selectedOption
+    ? selectedOption.pricePerGroup
+      ? selectedOption.price
+      : selectedOption.price * travelers
+    : activity.priceFrom * travelers;
+  const priceLabel = selectedOption?.pricePerGroup ? "ต่อกลุ่ม" : "ต่อคน";
+  const canGoToCart = date.trim() !== "";
+  const optionTitleForCart = selectedOption?.title ?? activity.title;
   const cityName = DESTINATION_NAMES[activity.slug] || activity.slug;
 
   return (
