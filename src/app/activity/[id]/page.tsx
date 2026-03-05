@@ -96,8 +96,8 @@ export default function ActivityPage() {
       <Header />
       <main className="pt-24 pb-16 min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-8 w-full min-w-0">
-          {/* Breadcrumb */}
-          <nav className="py-3 text-sm text-slate-500">
+          {/* Breadcrumb – ซ่อนบนมือถือให้คล้ายตัวอย่าง */}
+          <nav className="hidden sm:block py-3 text-sm text-slate-500">
             <Link href="/" className="hover:text-primary">หน้าแรก</Link>
             <span className="mx-2">/</span>
             <Link href={`/destination/${activity.slug}`} className="hover:text-primary">สำรวจ {cityName}</Link>
@@ -105,49 +105,84 @@ export default function ActivityPage() {
             <span className="text-slate-800 truncate max-w-[200px] inline-block align-bottom">{activity.title}</span>
           </nav>
 
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* คอลัมน์ซ้าย */}
-            <div className="flex-1 min-w-0">
-              {activity.banner && (
-                <span className="inline-block px-3 py-1 rounded bg-slate-800 text-white text-sm font-medium mb-3">
-                  {activity.banner}
-                </span>
-              )}
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-3">{activity.title}</h1>
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <span className="inline-flex items-center gap-1 text-amber-600">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  {activity.rating}
-                </span>
-                <span className="text-slate-600">({activity.reviewCount.toLocaleString()} รีวิว)</span>
-                <span className="text-slate-500">·</span>
-                <span className="text-slate-600">ผู้ให้บริการ: Route Wander</span>
-              </div>
+          {/* การ์ดหลักของกิจกรรม – บนมือถือเอาพื้นหลังขาวออก เหลือเฉพาะเดสก์ท็อป */}
+          <div className="rounded-3xl p-0 sm:bg-white sm:shadow-md sm:p-6">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* คอลัมน์ซ้าย */}
+              <div className="flex-1 min-w-0">
+                {/* แกลเลอรี่ – อยู่บนสุดสำหรับมือถือ */}
+                <div className="flex gap-2 mb-5 sm:mb-8">
+                  <div className="relative flex-1 aspect-[16/10] rounded-xl overflow-hidden bg-slate-200">
+                    <Image src={activity.image} alt={activity.imageAlt} fill className="object-cover" priority />
+                    <button
+                      type="button"
+                      className="absolute top-3 right-3 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center"
+                      aria-label="บันทึก"
+                    >
+                      <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute bottom-3 right-3 px-3 py-1.5 rounded bg-black/50 text-white text-xs sm:text-sm"
+                    >
+                      แชร์
+                    </button>
+                    {/* จุดบอกจำนวนรูป – สไตล์คล้าย dot carousel */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex flex-col gap-2 w-24 shrink-0">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-slate-200">
+                      <Image src={activity.image} alt="" width={96} height={96} className="object-cover w-full h-full" />
+                    </div>
+                    <div className="aspect-square rounded-lg overflow-hidden bg-slate-200 relative">
+                      <Image src={activity.image} alt="" width={96} height={96} className="object-cover w-full h-full" />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-sm">
+                        +2
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-              {/* แกลเลอรี่ */}
-              <div className="flex gap-2 mb-8">
-                <div className="relative flex-1 aspect-[16/10] rounded-xl overflow-hidden bg-slate-200">
-                  <Image src={activity.image} alt={activity.imageAlt} fill className="object-cover" priority />
-                  <button type="button" className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center" aria-label="บันทึก">
-                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                  </button>
-                  <button type="button" className="absolute bottom-3 right-3 px-3 py-1.5 rounded bg-black/50 text-white text-sm">แชร์</button>
-                </div>
-                <div className="hidden sm:flex flex-col gap-2 w-24 shrink-0">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-slate-200">
-                    <Image src={activity.image} alt="" width={96} height={96} className="object-cover w-full h-full" />
+                {/* ข้อมูลชื่อ / คะแนน / ผู้ให้บริการ – อยู่ใต้รูป และตัวอักษรเล็กลงบนมือถือ */}
+                <div className="mb-4">
+                  {activity.banner && (
+                    <span className="inline-block px-3 py-1 rounded bg-slate-800 text-white text-[11px] sm:text-xs font-medium mb-2">
+                      {activity.banner}
+                    </span>
+                  )}
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 mb-2">
+                    {activity.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+                    <span className="inline-flex items-center gap-1 text-amber-600">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span>{activity.rating}</span>
+                    </span>
+                    <span className="text-slate-600">
+                      ({activity.reviewCount.toLocaleString()} รีวิว)
+                    </span>
+                    <span className="text-slate-500">·</span>
+                    <span className="text-slate-600">ผู้ให้บริการ: Route Wander</span>
                   </div>
-                  <div className="aspect-square rounded-lg overflow-hidden bg-slate-200 relative">
-                    <Image src={activity.image} alt="" width={96} height={96} className="object-cover w-full h-full" />
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-sm">+2</span>
-                  </div>
                 </div>
-              </div>
 
               {activity.description && (
-                <p className="text-slate-700 mb-8">{activity.description}</p>
+                <p className="text-sm sm:text-base text-slate-700 mb-8">
+                  {activity.description}
+                </p>
               )}
 
               {/* เกี่ยวกับกิจกรรมนี้ */}
@@ -366,8 +401,23 @@ export default function ActivityPage() {
               {/* คุณอาจจะชอบ */}
               {related.length > 0 && (
                 <section>
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">คุณอาจจะชอบ...</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <h2 className="text-lg font-bold text-slate-800 mb-4">
+                    คุณอาจจะชอบ...
+                  </h2>
+
+                  {/* มือถือ: การ์ดเล็ก แถวเดียว เลื่อนซ้าย-ขวา */}
+                  <div className="sm:hidden -mx-4 px-4">
+                    <div className="flex gap-4 overflow-x-auto pb-2 scroll-smooth">
+                      {related.map((a) => (
+                        <div key={a.id} className="w-[240px] shrink-0">
+                          <ActivityCard {...a} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* จอใหญ่: กริดปกติ */}
+                  <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {related.map((a) => (
                       <ActivityCard key={a.id} {...a} />
                     ))}
@@ -377,8 +427,8 @@ export default function ActivityPage() {
             </div>
 
             {/* คอลัมน์ขวา - การจอง */}
-            <aside className="lg:w-96 shrink-0">
-              <div className="lg:sticky lg:top-24 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <aside className="lg:w-96 shrink-0 mt-4 lg:mt-0">
+              <div className="lg:sticky lg:top-24 rounded-2xl border border-slate-200 bg-slate-50 lg:bg-white p-5 lg:p-6 shadow-sm">
                 {activity.badgeRed && (
                   <p className="text-red-600 font-medium text-sm mb-3">{activity.badge}</p>
                 )}
@@ -464,7 +514,7 @@ export default function ActivityPage() {
           </div>
 
           {/* รีวิวลูกค้า — ปิดท้ายด้วยคอมเม้นให้คะแนน */}
-          <section className="mt-12 pt-8 border-t border-slate-200">
+          <section className="mt-10 pt-8 border-t border-slate-200">
             <h2 className="text-xl font-bold text-slate-800 mb-6">รีวิวลูกค้า</h2>
             <div className="flex flex-col lg:flex-row gap-8">
               <aside className="lg:w-56 shrink-0">
@@ -566,6 +616,7 @@ export default function ActivityPage() {
               </div>
             </div>
           </section>
+          </div>
         </div>
       </main>
       <Footer />

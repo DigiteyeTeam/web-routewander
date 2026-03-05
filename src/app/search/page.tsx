@@ -1,32 +1,31 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
-import {
-  DESTINATION_NAMES,
-  FILTER_CATEGORIES,
-  getFilteredActivities,
-} from "@/data/activities";
+import { FILTER_CATEGORIES, searchActivities } from "@/data/activities";
+import { useMemo, useState } from "react";
 
-export default function DestinationPage() {
-  const params = useParams();
-  const slug = (params?.slug as string) || "";
+type SearchPageProps = {
+  searchParams?: { q?: string };
+};
+
+export default function SearchPage({ searchParams }: SearchPageProps) {
+  const qParam = searchParams?.q ?? "";
+  const q = Array.isArray(qParam) ? qParam[0] : qParam;
   const [selectedFilter, setSelectedFilter] = useState("all");
 
-  const cityName = useMemo(
-    () => DESTINATION_NAMES[slug] || slug,
-    [slug]
-  );
+  const allResults = useMemo(() => searchActivities(q || ""), [q]);
 
-  const activities = useMemo(
-    () => getFilteredActivities(slug, selectedFilter),
-    [slug, selectedFilter]
-  );
+  const results = useMemo(() => {
+    if (selectedFilter === "all") return allResults;
+    if (selectedFilter === "food") {
+      return allResults.filter((a) => a.categoryKey === "food" || a.categoryKey === "food-drink");
+    }
+    return allResults.filter((a) => a.categoryKey === selectedFilter);
+  }, [allResults, selectedFilter]);
 
   return (
     <>
@@ -35,11 +34,11 @@ export default function DestinationPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-8 w-full min-w-0">
           <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-              สำรวจ {cityName}
+              ผลการค้นหา {q ? `“${q}”` : ""}
             </h1>
           </div>
 
-          {/* แถบตัวกรอง – ใช้สไตล์เหมือนลิสต์บนหน้าแรก (เลื่อนซ้าย‑ขวาได้ทุกขนาดจอ) */}
+          {/* แถบตัวกรอง – โคลนจากหน้า /destination */}
           <div className="mb-6 flex flex-col gap-4">
             <div className="-mx-4 px-4">
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scroll-smooth">
@@ -81,16 +80,20 @@ export default function DestinationPage() {
               </div>
             </div>
             <p className="text-sm text-slate-500">
-              {activities.length}+ ผลลัพธ์: {cityName}
+              {results.length}+ ผลลัพธ์ จากทั้งหมด {allResults.length} กิจกรรม
             </p>
           </div>
 
-          {/* ลิสต์ทริป */}
-          {activities.length > 0 ? (
+          {results.length === 0 ? (
+            <p className="text-slate-600">
+              ยังไม่มีกิจกรรมที่ตรงกับคำค้นนี้ ลองใช้คำอื่น หรือค้นหาด้วยชื่อเมือง เช่น
+              &quot;กรุงเทพ&quot; หรือ &quot;เชียงใหม่&quot; ดูนะครับ
+            </p>
+          ) : (
             <>
-              {/* มือถือ: การ์ดแนวนอน รูปซ้าย ข้อความขวา */}
+              {/* มือถือ: การ์ดแนวนอน รูปซ้าย ข้อความขวา (เหมือน /destination) */}
               <div className="sm:hidden space-y-3">
-                {activities.map((a) => (
+                {results.map((a) => (
                   <Link
                     key={a.id}
                     href={`/activity/${a.id}`}
@@ -153,9 +156,9 @@ export default function DestinationPage() {
                 ))}
               </div>
 
-              {/* จอใหญ่: กริดการ์ดปกติ */}
+              {/* จอใหญ่: กริดการ์ดปกติ (เหมือน /destination) */}
               <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
-                {activities.map((a) => (
+                {results.map((a) => (
                   <ActivityCard
                     key={a.id}
                     id={a.id}
@@ -176,17 +179,6 @@ export default function DestinationPage() {
                 ))}
               </div>
             </>
-          ) : (
-            <div className="py-16 text-center text-slate-500">
-              <p>ไม่พบกิจกรรมในหมวดนี้</p>
-              <button
-                type="button"
-                onClick={() => setSelectedFilter("all")}
-                className="mt-4 text-primary font-medium hover:underline"
-              >
-                แสดงทั้งหมด
-              </button>
-            </div>
           )}
         </div>
       </main>
@@ -194,3 +186,4 @@ export default function DestinationPage() {
     </>
   );
 }
+

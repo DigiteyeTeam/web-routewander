@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import logo from "@/images/apple-touch-icon.png";
 
 const placesCategories = [
@@ -49,15 +50,15 @@ const thingsList = [
 export default function Header() {
   const [placesOpen, setPlacesOpen] = useState(false);
   const [thingsOpen, setThingsOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent text-white md:bg-white md:bg-none md:text-slate-800 md:border-b md:border-slate-200">
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-5 md:px-6 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
           <Link href="/" className="flex items-center shrink-0" aria-label="Route Wander">
             <span
-              className="block h-[120px] sm:h-[133px] w-auto shrink-0"
+              className="block h-[84px] sm:h-[133px] w-auto shrink-0"
               style={{
                 aspectRatio: `${logo.width} / ${logo.height}`,
                 backgroundColor: "#0066FF",
@@ -72,7 +73,7 @@ export default function Header() {
               }}
             />
           </Link>
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6 text-slate-100 md:text-slate-700">
           <div
             className="relative"
             onMouseEnter={() => { setPlacesOpen(true); setThingsOpen(false); }}
@@ -231,15 +232,52 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-5 text-slate-100 md:text-slate-600">
+          <Link
+            href="/wishlist"
+            className="flex flex-col items-center gap-0.5 text-slate-100 md:text-slate-600 hover:text-primary transition-colors min-w-[32px] text-xs md:text-[11px]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span className="hidden md:block text-[11px]">ที่อยากได้</span>
+          </Link>
+          <Link
+            href="/cart"
+            className="flex flex-col items-center gap-0.5 text-slate-100 md:text-slate-600 hover:text-primary transition-colors min-w-[32px] text-xs md:text-[11px]"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l3-6H6.4M7 13L5.4 5M7 13l-2 6h14m-9 0a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" />
+            </svg>
+            <span className="hidden md:block text-[11px]">รถเข็น</span>
+          </Link>
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            className="hidden sm:flex flex-col items-center gap-0.5 text-slate-100 md:text-slate-600 hover:text-primary transition-colors min-w-[40px] text-xs"
+            aria-label="Language and currency"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+            </svg>
+            <span className="text-[11px]">TH / THB</span>
+          </button>
+          <Link
+            href="/profile"
+            className="hidden sm:flex flex-col items-center gap-0.5 text-slate-100 md:text-slate-600 hover:text-primary transition-colors min-w-[40px] text-xs"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0" />
+            </svg>
+            <span className="text-[11px]">โปรไฟล์</span>
+          </Link>
+          <button
+            type="button"
+            className="md:hidden inline-flex items-center justify-center w-7 h-7 rounded-full border border-slate-100/60 bg-slate-900/40 hover:bg-slate-900/70"
             aria-label="เปิดเมนู"
-            onClick={() => setMobileMenuOpen((v) => !v)}
+            onClick={() => router.push("/menu")}
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -248,154 +286,12 @@ export default function Header() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+                d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
           </button>
-          <Link
-            href="/wishlist"
-            className="hidden sm:flex flex-col items-center gap-0.5 text-slate-600 hover:text-primary transition-colors min-w-[52px]"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <span className="text-xs">รายการที่อยากได้</span>
-          </Link>
-          <Link
-            href="/cart"
-            className="flex flex-col items-center gap-0.5 text-slate-600 hover:text-primary transition-colors min-w-[52px]"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <span className="text-xs">รถเข็น</span>
-          </Link>
-          <button
-            type="button"
-            className="hidden sm:flex flex-col items-center gap-0.5 text-slate-600 hover:text-primary transition-colors min-w-[52px]"
-            aria-label="Language and currency"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-            <span className="text-xs">TH / THB</span>
-          </button>
-          <Link
-            href="/profile"
-            className="hidden sm:flex flex-col items-center gap-0.5 text-slate-600 hover:text-primary transition-colors min-w-[52px]"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className="text-xs">โพรไฟล์</span>
-          </Link>
         </div>
       </div>
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-slate-900/60">
-          <div className="flex flex-col w-full h-full bg-white">
-            <div className="bg-slate-800 text-white">
-              <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-                <span className="text-sm font-semibold">เมนู</span>
-                <button
-                  type="button"
-                  className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-500/60"
-                  aria-label="ปิดเมนู"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <div className="max-w-7xl mx-auto px-4 py-4 space-y-6 text-sm text-slate-800">
-              <div className="space-y-2">
-                <Link
-                  href="/destination/bangkok"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <span className="flex flex-col gap-0.5">
-                    <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600 text-xs">
-                        📍
-                      </span>
-                      <span className="font-medium text-slate-800">Places to see</span>
-                    </span>
-                    <span className="text-xs text-slate-500">สถานที่ที่น่าดู</span>
-                  </span>
-                  <span className="text-slate-400">›</span>
-                </Link>
-                <Link
-                  href="/activity/1"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <span className="flex flex-col gap-0.5">
-                    <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600 text-xs">
-                        ✨
-                      </span>
-                      <span className="font-medium text-slate-800">Things to do</span>
-                    </span>
-                    <span className="text-xs text-slate-500">กิจกรรมน่าทำ</span>
-                  </span>
-                  <span className="text-slate-400">›</span>
-                </Link>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200 space-y-2">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">โปรไฟล์</p>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-                >
-                  <span>เข้าสู่ระบบหรือลงทะเบียน</span>
-                  <span className="text-slate-400">›</span>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-                >
-                  <span>สกุลเงิน</span>
-                  <span className="text-slate-500 text-xs">THB</span>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-                >
-                  <span>ภาษา</span>
-                  <span className="text-slate-500 text-xs">ไทย</span>
-                </button>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200 space-y-2">
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-                >
-                  <span>ความช่วยเหลือ</span>
-                  <span className="text-slate-400">›</span>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-                >
-                  <span>ดาวน์โหลดแอป</span>
-                  <span className="text-slate-400">›</span>
-                </button>
-              </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

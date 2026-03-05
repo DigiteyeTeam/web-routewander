@@ -111,7 +111,20 @@ export default function SectionExperiences() {
         <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-8">
           ประสบการณ์เดินทางที่น่าจดจำ
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 min-w-0">
+
+        {/* มือถือ: เลื่อนซ้ายขวา */}
+        <div className="sm:hidden -mx-4 px-4">
+          <div className="flex gap-4 overflow-x-auto pb-2 scroll-smooth">
+            {experiences.map((a) => (
+              <div key={a.id} className="shrink-0 w-[260px]">
+                <ActivityCard {...a} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* จอใหญ่: แสดงเป็นกริด */}
+        <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-6 min-w-0">
           {experiences.map((a) => (
             <ActivityCard key={a.id} {...a} />
           ))}

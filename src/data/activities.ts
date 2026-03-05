@@ -229,6 +229,23 @@ export function getFilteredActivities(slug: string, categoryKey: string): Activi
   return byDest.filter((a) => a.categoryKey === categoryKey);
 }
 
+/** ค้นหากิจกรรมทั้งหมดตามคำค้น (ใช้หน้า Search) */
+export function searchActivities(query: string): ActivityItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return activities;
+
+  return activities.filter((a) => {
+    const title = a.title.toLowerCase();
+    const category = a.category.toLowerCase();
+    const cityName = (DESTINATION_NAMES[a.slug] || a.slug).toLowerCase();
+    return (
+      title.includes(q) ||
+      category.includes(q) ||
+      cityName.includes(q)
+    );
+  });
+}
+
 /** ขั้นตอนในกำหนดการเดินทาง */
 export type ItineraryStep = {
   type: "start_pickup" | "travel" | "activity" | "rest" | "drop_off";
