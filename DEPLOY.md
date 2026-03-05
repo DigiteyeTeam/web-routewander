@@ -5,7 +5,7 @@
 1. ไปที่ [vercel.com](https://vercel.com) แล้วลงชื่อเข้าใช้ (ใช้ GitHub ได้)
 2. คลิก **Add New** → **Project**
 3. เลือก repo **DigiteyeTeam/web-routewander** จาก GitHub
-4. Vercel จะ detect เป็น Next.js อัตโนมัติ — ไม่ต้องเปลี่ยน settings
+4. Vercel จะ detect เป็น Next.js อัตโนมัติ — **อย่าตั้ง Output Directory เป็น `dist`** (โปรเจกต์ Next.js ไม่ใช้โฟลเดอร์นี้)
 5. คลิก **Deploy**
 6. รอสักครู่ จะได้ URL เช่น `web-routewander.vercel.app`
 
