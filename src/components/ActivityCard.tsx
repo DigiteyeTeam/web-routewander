@@ -2,42 +2,69 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslation } from "@/context/LocaleContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { filterKeyToTKey, featureKeyToTKey } from "@/i18n/translations";
+import type { FeatureKey } from "@/data/activities";
 
 export type ActivityCardProps = {
   id: string;
   title: string;
+  titleEn?: string;
   image: string;
   imageAlt: string;
   rating: number;
   reviewCount: number;
   duration: string;
+  durationEn?: string;
   priceFrom: number;
   category?: string;
+  categoryKey?: string;
   badge?: string;
+  badgeKey?: "likelyToSellOut" | "popular";
   badgeRed?: boolean;
   features?: string[];
+  featureKeys?: FeatureKey[];
   priceOriginal?: number;
   banner?: string;
+  bannerKey?: "certifiedByRouteWander" | "originalsByRouteWander";
   className?: string;
 };
 
 export default function ActivityCard({
   id,
   title,
+  titleEn,
   image,
   imageAlt,
   rating,
   reviewCount,
   duration,
+  durationEn,
   priceFrom,
   category,
+  categoryKey,
   badge,
+  badgeKey,
   badgeRed,
   features = [],
+  featureKeys,
   priceOriginal,
   banner,
+  bannerKey,
   className = "",
 }: ActivityCardProps) {
+  const { t, locale } = useTranslation();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const inWishlist = isInWishlist(id);
+  const displayBanner = bannerKey ? t(bannerKey) : banner;
+  const displayCategory = (categoryKey && filterKeyToTKey[categoryKey] ? t(filterKeyToTKey[categoryKey]) : category) ?? "";
+  const displayTitle = locale === "en" && titleEn ? titleEn : title;
+  const displayDuration = locale === "en" && durationEn ? durationEn : duration;
+  const displayFeatures = (locale === "en" && featureKeys?.length
+    ? featureKeys.map((k) => (featureKeyToTKey[k] ? t(featureKeyToTKey[k]) : k))
+    : features) as string[];
+  const featuresText = displayFeatures.length > 0 ? ` · ${displayFeatures.join(" · ")}` : "";
   return (
     <article className={`group bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-slate-300 transition-all duration-200 min-w-0 max-w-full ${className}`}>
       <Link href={`/activity/${id}`} className="block">
@@ -49,39 +76,45 @@ export default function ActivityCard({
             height={300}
             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
           />
-          {banner && (
+          {displayBanner && (
             <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/60 text-white text-xs font-medium">
-              {banner}
+              {displayBanner}
             </span>
           )}
-          {badge && !banner && (
+          {(badge || badgeKey) && !displayBanner && (
             <span
               className={`absolute top-3 left-3 px-2.5 py-1 rounded text-xs font-semibold ${
                 badgeRed ? "bg-red-500 text-white" : "bg-primary text-white"
               }`}
             >
-              {badge}
+              {badgeKey ? t(badgeKey) : badge}
             </span>
           )}
           <button
             type="button"
-            className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-slate-600 hover:text-red-500 transition-colors"
-            aria-label="บันทึกลงรายการที่อยากได้"
-            onClick={(e) => e.preventDefault()}
+            className={`absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
+              inWishlist ? "bg-red-500/90 text-white hover:bg-red-500" : "bg-white/90 hover:bg-white text-slate-600 hover:text-red-500"
+            }`}
+            aria-label={t("addToWishlist")}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(id);
+            }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill={inWishlist ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
         </div>
         <div className="p-3">
-          {category && (
-            <p className="text-xs text-slate-500 mb-1">{category}</p>
+          {displayCategory && (
+            <p className="text-xs text-slate-500 mb-1">{displayCategory}</p>
           )}
           <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-1.5 group-hover:text-primary transition-colors">
-            {title}
+            {displayTitle}
           </h3>
-          <p className="text-xs text-slate-500 mb-2">{duration}{features.length > 0 ? ` · ${features.join(" · ")}` : ""}</p>
+          <p className="text-xs text-slate-500 mb-2">{displayDuration}{featuresText}</p>
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1 text-amber-600 text-sm">
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -94,7 +127,7 @@ export default function ActivityCard({
                 <span className="text-xs text-slate-400 line-through block">฿{priceOriginal.toLocaleString()}</span>
               )}
               <p className="text-sm">
-                <span className="text-slate-500">จาก </span>
+                <span className="text-slate-500">{t("from")} </span>
                 <strong className={priceOriginal != null && priceOriginal > priceFrom ? "text-red-600" : "text-slate-800"}>
                   ฿{priceFrom.toLocaleString()}
                 </strong>

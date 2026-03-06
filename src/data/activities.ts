@@ -1,19 +1,25 @@
+export type FeatureKey = "skipTheLine" | "freeCancellation" | "localTasting" | "pickupIncluded" | "guidedTour";
+
 export type ActivityItem = {
   id: string;
   slug: string;
   title: string;
+  titleEn?: string;
   image: string;
   imageAlt: string;
   rating: number;
   reviewCount: number;
   duration: string;
+  durationEn?: string;
   priceFrom: number;
   priceOriginal?: number;
   category: string;
   categoryKey: string;
   badge?: string;
+  badgeKey?: "likelyToSellOut" | "popular";
   badgeRed?: boolean;
   features: string[];
+  featureKeys?: FeatureKey[];
   banner?: string;
 };
 
@@ -44,180 +50,226 @@ const activities: ActivityItem[] = [
     id: "1",
     slug: "bangkok",
     title: "วัดพระศรีรัตนศาสดาราม และวัดสำคัญในกรุงเทพ",
+    titleEn: "Grand Palace & Temple of Emerald Buddha Tour",
     image: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=600&q=80",
     imageAlt: "วัดพระแก้ว",
     rating: 4.9,
     reviewCount: 2341,
     duration: "4 ชั่วโมง",
+    durationEn: "4 hours",
     priceFrom: 1290,
     category: "ทัวร์พร้อมไกด์",
     categoryKey: "guided-tour",
     badge: "มีแนวโน้มขายหมด",
+    badgeKey: "likelyToSellOut",
     badgeRed: true,
     features: ["ไม่ต้องต่อแถว"],
+    featureKeys: ["skipTheLine"],
   },
   {
     id: "2",
     slug: "bangkok",
     title: "ตลาดน้ำอัมพวา และเรือชมวิว",
+    titleEn: "Amphawa Floating Market & Boat Tour",
     image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80",
     imageAlt: "ตลาดน้ำ",
     rating: 4.7,
     reviewCount: 892,
     duration: "6 ชั่วโมง",
+    durationEn: "6 hours",
     priceFrom: 1590,
     category: "เดย์ทริป",
     categoryKey: "day-trip",
     features: ["ฟรียกเลิก"],
+    featureKeys: ["freeCancellation"],
   },
   {
     id: "3",
     slug: "bangkok",
     title: "ทัวร์ร้านอาหารและของหวานย่านเยาวราช",
+    titleEn: "Yaowarat Food & Dessert Tour",
     image: "https://images.unsplash.com/photo-1551969014-7d2c4cddf0b6?w=600&q=80",
     imageAlt: "อาหารเยาวราช",
     rating: 4.8,
     reviewCount: 445,
     duration: "3 ชั่วโมง",
+    durationEn: "3 hours",
     priceFrom: 990,
     category: "อาหาร & เครื่องดื่ม",
     categoryKey: "food-drink",
     features: ["ชิมของท้องถิ่น"],
+    featureKeys: ["localTasting"],
   },
   {
     id: "4",
     slug: "bangkok",
     title: "วัดโพธิ์ และวัดพระแก้ว เดย์ทริป",
+    titleEn: "Wat Pho & Grand Palace Day Trip",
     image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80",
     imageAlt: "วัดโพธิ์",
     rating: 4.9,
     reviewCount: 1523,
     duration: "5 ชั่วโมง",
+    durationEn: "5 hours",
     priceFrom: 1390,
     category: "สถานที่เที่ยว",
     categoryKey: "attraction",
     badge: "ยอดนิยม",
+    badgeKey: "popular",
     features: ["ไม่ต้องต่อแถว"],
+    featureKeys: ["skipTheLine"],
   },
   {
     id: "5",
     slug: "bangkok",
     title: "คลาสทำอาหารไทย วัดวัตถุและตลาด",
+    titleEn: "Thai Cooking Class with Market Visit",
     image: "https://images.unsplash.com/photo-1551969014-7d2c4cddf0b6?w=600&q=80",
     imageAlt: "คลาสทำอาหาร",
     rating: 4.9,
     reviewCount: 678,
     duration: "4 ชั่วโมง",
+    durationEn: "4 hours",
     priceFrom: 1490,
     category: "เรียนทำอาหาร",
     categoryKey: "cooking",
     features: ["ฟรียกเลิก"],
+    featureKeys: ["freeCancellation"],
   },
   {
     id: "6",
     slug: "bangkok",
     title: "พระราชวังและวัดสำคัญ กรุงเทพ",
+    titleEn: "Grand Palace & Temples of Bangkok",
     image: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=600&q=80",
     imageAlt: "พระราชวัง",
     rating: 4.8,
     reviewCount: 2103,
     duration: "4 ชั่วโมง",
+    durationEn: "4 hours",
     priceFrom: 1290,
     priceOriginal: 1590,
     category: "วัฒนธรรม & ประวัติศาสตร์",
     categoryKey: "culture",
     banner: "ได้รับการรับรอง",
     features: ["ไม่ต้องต่อแถว"],
+    featureKeys: ["skipTheLine"],
   },
   {
     id: "7",
     slug: "chiang-mai",
     title: "ดอยอินทนนท์ และหมู่บ้านกะเหรี่ยง",
+    titleEn: "Doi Inthanon & Karen Village",
     image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80",
     imageAlt: "ดอยอินทนนท์",
     rating: 4.8,
     reviewCount: 1556,
     duration: "8 ชั่วโมง",
+    durationEn: "8 hours",
     priceFrom: 1890,
     category: "เดย์ทริป",
     categoryKey: "day-trip",
     features: ["มีบริการไปรับ"],
+    featureKeys: ["pickupIncluded"],
   },
   {
     id: "8",
     slug: "chiang-mai",
     title: "วัดและเมืองเก่าเชียงใหม่",
+    titleEn: "Chiang Mai Temples & Old City",
     image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=600&q=80",
     imageAlt: "เชียงใหม่",
     rating: 4.7,
     reviewCount: 892,
     duration: "4 ชั่วโมง",
+    durationEn: "4 hours",
     priceFrom: 1190,
     category: "สถานที่เที่ยว",
     categoryKey: "attraction",
     features: ["ทัวร์พร้อมไกด์"],
+    featureKeys: ["guidedTour"],
   },
   {
     id: "9",
     slug: "krabi",
     title: "เกาะพีพี สปีดโบ๊ท และดำน้ำดูปะการัง",
+    titleEn: "Phi Phi Islands Speedboat & Snorkeling",
     image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=600&q=80",
     imageAlt: "พีพี",
     rating: 4.6,
     reviewCount: 3102,
     duration: "7 ชั่วโมง",
+    durationEn: "7 hours",
     priceFrom: 2190,
     category: "กิจกรรมทางน้ำ",
     categoryKey: "water",
     badge: "ยอดนิยม",
+    badgeKey: "popular",
     features: ["ฟรียกเลิก"],
+    featureKeys: ["freeCancellation"],
   },
   {
     id: "10",
     slug: "phuket",
     title: "ทัวร์เกาะพีพีจากภูเก็ต",
+    titleEn: "Phi Phi Islands Tour from Phuket",
     image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=600&q=80",
     imageAlt: "พีพี",
     rating: 4.5,
     reviewCount: 1892,
     duration: "8 ชั่วโมง",
+    durationEn: "8 hours",
     priceFrom: 2390,
     category: "กิจกรรมทางน้ำ",
     categoryKey: "water",
     features: ["ฟรียกเลิก", "มีบริการไปรับ"],
+    featureKeys: ["freeCancellation", "pickupIncluded"],
   },
   {
     id: "11",
     slug: "samut-songkhram",
     title: "ตลาดน้ำอัมพวา และเรือชมวิว",
+    titleEn: "Amphawa Floating Market & Boat Tour",
     image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80",
     imageAlt: "ตลาดน้ำ",
     rating: 4.7,
     reviewCount: 892,
     duration: "6 ชั่วโมง",
+    durationEn: "6 hours",
     priceFrom: 1590,
     category: "เดย์ทริป",
     categoryKey: "day-trip",
     features: ["ฟรียกเลิก"],
+    featureKeys: ["freeCancellation"],
   },
   {
     id: "12",
     slug: "pattaya",
     title: "เกาะล้าน สปีดโบ๊ท และดำน้ำ",
+    titleEn: "Koh Larn Speedboat & Snorkeling",
     image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=600&q=80",
     imageAlt: "เกาะล้าน",
     rating: 4.6,
     reviewCount: 2103,
     duration: "6 ชั่วโมง",
+    durationEn: "6 hours",
     priceFrom: 1990,
     category: "กิจกรรมทางน้ำ",
     categoryKey: "water",
     features: ["ฟรียกเลิก"],
+    featureKeys: ["freeCancellation"],
   },
 ];
 
 export function getActivitiesByDestination(slug: string): ActivityItem[] {
   return activities.filter((a) => a.slug === slug);
+}
+
+/** ดึงกิจกรรมจากรายการ id (ใช้หน้า Wishlist) */
+export function getActivitiesByIds(ids: string[]): ActivityItem[] {
+  return ids
+    .map((id) => activities.find((a) => a.id === id))
+    .filter((a): a is ActivityItem => a != null);
 }
 
 export function getFilteredActivities(slug: string, categoryKey: string): ActivityItem[] {
@@ -236,12 +288,16 @@ export function searchActivities(query: string): ActivityItem[] {
 
   return activities.filter((a) => {
     const title = a.title.toLowerCase();
+    const titleEn = (a.titleEn || "").toLowerCase();
     const category = a.category.toLowerCase();
     const cityName = (DESTINATION_NAMES[a.slug] || a.slug).toLowerCase();
+    const cityNameEn = (CITY_NAME_EN[a.slug] || "").toLowerCase();
     return (
       title.includes(q) ||
+      titleEn.includes(q) ||
       category.includes(q) ||
-      cityName.includes(q)
+      cityName.includes(q) ||
+      cityNameEn.includes(q)
     );
   });
 }
@@ -275,8 +331,18 @@ export type ReviewItem = {
   helpfulCount?: number;
 };
 
+const CITY_NAME_EN: Record<string, string> = {
+  bangkok: "Bangkok",
+  "chiang-mai": "Chiang Mai",
+  pattaya: "Pattaya",
+  krabi: "Krabi",
+  phuket: "Phuket",
+  "samut-songkhram": "Samut Songkhram",
+};
+
 export type ActivityDetail = ActivityItem & {
   description?: string;
+  descriptionEn?: string;
   about?: { icon: string; title: string; text: string }[];
   included?: string[];
   notIncluded?: string[];
@@ -301,9 +367,11 @@ export function getActivityById(id: string): ActivityDetail | null {
   const a = activities.find((x) => x.id === id);
   if (!a) return null;
   const cityName = DESTINATION_NAMES[a.slug] || a.slug;
+  const cityNameEn = CITY_NAME_EN[a.slug] || a.slug;
   return {
     ...a,
     description: `เดินทางไปยัง${cityName}และสัมผัสประสบการณ์ที่หลากหลายในทัวร์พร้อมไกด์ท้องถิ่น ชมสถานที่สำคัญ และทำกิจกรรมที่คุณสนใจ`,
+    descriptionEn: `Travel to ${cityNameEn} and experience a variety of tours with local guides. Visit key sights and do activities you enjoy.`,
     about: defaultAbout.map((item, i) => (i === 2 ? { ...item, text: `${a.duration} — ${item.text}` } : item)),
     included: ["ไกด์ท้องถิ่น", "ตั๋วเข้าชม (ตามที่ระบุ)", "ฟรียกเลิกภายใน 24 ชม."],
     notIncluded: ["อาหารและเครื่องดื่มเพิ่มเติม", "เคล็ดลับ"],

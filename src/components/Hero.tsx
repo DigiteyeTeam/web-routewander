@@ -3,9 +3,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { searchActivities, DESTINATION_NAMES } from "@/data/activities";
+import { useTranslation } from "@/context/LocaleContext";
+import { slugToCityKey } from "@/i18n/translations";
 
 export default function Hero() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [q, setQ] = useState("");
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -52,9 +55,9 @@ export default function Hero() {
 
       <div className="relative z-10 w-full max-w-3xl mt-4 md:mt-0 text-left md:text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-lg mb-4 sm:mb-6 leading-tight">
-          ค้นพบ & จอง
+          {t("heroTitle1")}
           <br className="hidden sm:block" />
-          กิจกรรมน่าทำในประเทศไทย
+          {t("heroTitle2")}
         </h1>
 
         {/* กล่องค้นหาหลัก */}
@@ -77,27 +80,28 @@ export default function Hero() {
                   setDropdownOpen(true);
                 }
               }}
-              placeholder="ค้นหา..."
+              placeholder={t("searchPlaceholder")}
               className="flex-1 min-w-0 px-5 py-3.5 bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-500 text-sm sm:text-base"
-              aria-label="Search"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3.5 rounded-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm sm:text-base transition-colors shrink-0"
-            >
-              ค้นหา
-            </button>
+            aria-label="Search"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3.5 rounded-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm sm:text-base transition-colors shrink-0"
+              >
+                {t("search")}
+          </button>
           </form>
 
           {/* เดสก์ท็อป: แสดง dropdown แนะนำเมื่อมี focus */}
           {!isMobile && dropdownOpen && suggestions.length > 0 && (
             <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-200 max-h-80 overflow-y-auto z-20">
               <div className="px-4 pt-3 pb-2 text-xs font-medium text-slate-500">
-                คำแนะนำ
+                {t("suggestions")}
               </div>
               <ul className="px-2 pb-2">
                 {suggestions.map((a) => {
-                  const cityName = DESTINATION_NAMES[a.slug] || a.slug;
+                  const cityKey = slugToCityKey[a.slug];
+                  const cityName = cityKey ? t(cityKey) : (DESTINATION_NAMES[a.slug] || a.slug);
                   return (
                     <li key={a.id}>
                       <button
@@ -134,7 +138,7 @@ export default function Hero() {
                             {a.title}
                           </p>
                           <p className="text-xs text-slate-500 truncate">
-                            เมืองใน {cityName}, ประเทศไทย
+                            {t("cityInThailand")} {cityName}, {t("thailand")}
                           </p>
                         </div>
                       </button>
@@ -155,7 +159,7 @@ export default function Hero() {
               type="button"
               onClick={() => setOverlayOpen(false)}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100"
-              aria-label="ปิดการค้นหา"
+              aria-label={t("closeMenu")}
             >
               <svg
                 className="w-5 h-5 text-slate-700"
@@ -178,7 +182,7 @@ export default function Hero() {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   autoFocus
-                  placeholder="ค้นหา..."
+                  placeholder={t("searchPlaceholder")}
                   className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-slate-800 placeholder:text-slate-500 px-2"
                 />
                 <button
@@ -194,7 +198,7 @@ export default function Hero() {
                   }}
                   className="ml-1 inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-primary text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  ค้นหา
+                  {t("search")}
                 </button>
               </div>
             </div>
@@ -202,7 +206,7 @@ export default function Hero() {
 
           <div className="px-4 pt-3 pb-6 overflow-y-auto">
             <p className="text-xs font-medium text-slate-500 mb-3">
-              คำแนะนำ
+              {t("suggestions")}
             </p>
             <ul className="space-y-2">
               {suggestions.map((a) => {

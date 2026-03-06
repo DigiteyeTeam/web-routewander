@@ -6,11 +6,15 @@ import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
+import { useBookings } from "@/context/BookingsContext";
+import { useTranslation } from "@/context/LocaleContext";
 
 type PaymentMethod = "card" | "cash";
 
 export default function CartPage() {
   const { items, removeItem, clearCart } = useCart();
+  const { addBookings } = useBookings();
+  const { t } = useTranslation();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
@@ -18,6 +22,20 @@ export default function CartPage() {
 
   const handleConfirm = () => {
     if (!paymentMethod) return;
+    addBookings(
+      items.map((item) => ({
+        activityId: item.activityId,
+        activityTitle: item.activityTitle,
+        activityImage: item.activityImage,
+        optionTitle: item.optionTitle,
+        travelers: item.travelers,
+        tripStartDate: item.date,
+        language: item.language,
+        price: item.price,
+        paymentMethod,
+        meetingPlace: t("meetingPlaceDefault"),
+      }))
+    );
     setConfirmed(true);
     clearCart();
   };
@@ -27,25 +45,26 @@ export default function CartPage() {
       <Header />
       <main className="pt-24 pb-16 min-h-screen bg-slate-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-5 md:px-6 lg:px-8 w-full min-w-0">
-          <h1 className="text-2xl font-bold text-slate-800 mb-8">รถเข็น</h1>
+          <h1 className="text-2xl font-bold text-slate-800 mb-8">{t("cartTitle")}</h1>
 
           {items.length === 0 && !confirmed ? (
             <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
-              <p className="text-slate-600 mb-4">ยังไม่มีรายการในรถเข็น</p>
+              <p className="text-slate-600 mb-4">{t("cartEmpty")}</p>
               <Link href="/" className="text-primary font-medium hover:underline">
-                กลับหน้าแรก
+                {t("backToHome")}
               </Link>
             </div>
           ) : confirmed ? (
             <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
-              <p className="text-green-600 font-semibold mb-2">ยืนยันการจองเรียบร้อย</p>
+              <p className="text-green-600 font-semibold mb-2">{t("bookingConfirmed")}</p>
               <p className="text-slate-600 text-sm mb-6">
-                {paymentMethod === "card"
-                  ? "ชำระโดยบัตร — เราจะติดต่อคุณเพื่อดำเนินการชำระเงิน"
-                  : "ชำระหน้างาน (เงินสด) — กรุณาชำระเงินสดที่จุดนัดพบ"}
+                {paymentMethod === "card" ? t("payByCardNote") : t("payOnSiteNote")}
               </p>
-              <Link href="/" className="text-primary font-medium hover:underline">
-                กลับหน้าแรก
+              <Link
+                href="/updates"
+                className="inline-block px-6 py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors"
+              >
+                {t("viewMyBookings")}
               </Link>
             </div>
           ) : (
@@ -71,7 +90,7 @@ export default function CartPage() {
                       <h2 className="font-semibold text-slate-800">{item.activityTitle}</h2>
                       <p className="text-sm text-slate-600">{item.optionTitle}</p>
                       <p className="text-sm text-slate-500 mt-1">
-                        {item.date} · {item.travelers} คน · {item.language}
+                        {item.date} · {item.travelers} {t("travelers")} · {item.language}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -83,7 +102,7 @@ export default function CartPage() {
                         onClick={() => removeItem(item.id)}
                         className="text-xs text-slate-500 hover:text-red-600 mt-1"
                       >
-                        ลบ
+                        {t("remove")}
                       </button>
                     </div>
                   </li>
@@ -91,7 +110,7 @@ export default function CartPage() {
               </ul>
 
               <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
-                <h2 className="text-lg font-bold text-slate-800 mb-4">วิธีชำระเงิน</h2>
+                <h2 className="text-lg font-bold text-slate-800 mb-4">{t("paymentMethod")}</h2>
                 <div className="space-y-4">
                   <label className="flex items-start gap-3 cursor-pointer p-4 rounded-lg border-2 border-slate-200 hover:border-primary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                     <input
@@ -103,8 +122,8 @@ export default function CartPage() {
                       className="mt-1 w-4 h-4 text-primary"
                     />
                     <div>
-                      <p className="font-medium text-slate-800">1. ชำระโดยบัตร</p>
-                      <p className="text-sm text-slate-600">บัตรเครดิต / บัตรเดบิต</p>
+                      <p className="font-medium text-slate-800">1. {t("payByCard")}</p>
+                      <p className="text-sm text-slate-600">{t("creditDebitCard")}</p>
                     </div>
                   </label>
                   <label className="flex items-start gap-3 cursor-pointer p-4 rounded-lg border-2 border-slate-200 hover:border-primary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
@@ -117,10 +136,8 @@ export default function CartPage() {
                       className="mt-1 w-4 h-4 text-primary"
                     />
                     <div>
-                      <p className="font-medium text-slate-800">2. ชำระหน้างาน (เงินสด)</p>
-                      <p className="text-sm text-slate-600">
-                        สำหรับบุคคลที่มีธนาคารที่ถูกคร่าบาทในสงคราม จึงสามารถใช้ได้แค่เงินสด
-                      </p>
+                      <p className="font-medium text-slate-800">2. {t("payOnSite")}</p>
+                      <p className="text-sm text-slate-600">{t("payOnSiteWarNote")}</p>
                     </div>
                   </label>
                 </div>
@@ -128,7 +145,7 @@ export default function CartPage() {
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 <p className="text-xl font-bold text-slate-800">
-                  รวมทั้งสิ้น {total.toLocaleString()} THB
+                  {t("total")} {total.toLocaleString()} THB
                 </p>
                 <button
                   type="button"
@@ -136,7 +153,7 @@ export default function CartPage() {
                   disabled={!paymentMethod}
                   className="px-8 py-3 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold"
                 >
-                  ยืนยันการจอง
+                  {t("confirmBooking")}
                 </button>
               </div>
             </>

@@ -1,27 +1,39 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
 import {
-  DESTINATION_NAMES,
   FILTER_CATEGORIES,
   getFilteredActivities,
 } from "@/data/activities";
+import { useTranslation } from "@/context/LocaleContext";
+import { filterKeyToTKey, slugToCityKey } from "@/i18n/translations";
+
+type FilterKey = (typeof FILTER_CATEGORIES)[number]["key"];
+const VALID_FILTERS = new Set<FilterKey>(FILTER_CATEGORIES.map((f) => f.key));
 
 export default function DestinationPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = (params?.slug as string) || "";
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const filterFromUrl = searchParams?.get("filter") ?? "";
+  const initialFilter: FilterKey = VALID_FILTERS.has(filterFromUrl as FilterKey) ? (filterFromUrl as FilterKey) : "all";
+  const { t } = useTranslation();
+  const [selectedFilter, setSelectedFilter] = useState<FilterKey>(initialFilter);
 
-  const cityName = useMemo(
-    () => DESTINATION_NAMES[slug] || slug,
-    [slug]
-  );
+  useEffect(() => {
+    if (VALID_FILTERS.has(filterFromUrl as FilterKey)) setSelectedFilter(filterFromUrl as FilterKey);
+  }, [filterFromUrl]);
+
+  const cityName = useMemo(() => {
+    const key = slugToCityKey[slug];
+    return key ? t(key) : slug;
+  }, [slug, t]);
 
   const activities = useMemo(
     () => getFilteredActivities(slug, selectedFilter),
@@ -35,7 +47,7 @@ export default function DestinationPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-8 w-full min-w-0">
           <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-              สำรวจ {cityName}
+              {t("explore")} {cityName}
             </h1>
           </div>
 
@@ -75,13 +87,13 @@ export default function DestinationPage() {
                         : "bg-white text-slate-700 border border-slate-200 hover:border-primary hover:text-primary"
                     }`}
                   >
-                    {f.label}
+                    {t(filterKeyToTKey[f.key] ?? "filterAll")}
                   </button>
                 ))}
               </div>
             </div>
             <p className="text-sm text-slate-500">
-              {activities.length}+ ผลลัพธ์: {cityName}
+              {activities.length}+ {t("resultsCount")}: {cityName}
             </p>
           </div>
 
@@ -160,17 +172,22 @@ export default function DestinationPage() {
                     key={a.id}
                     id={a.id}
                     title={a.title}
+                    titleEn={a.titleEn}
                     image={a.image}
                     imageAlt={a.imageAlt}
                     rating={a.rating}
                     reviewCount={a.reviewCount}
                     duration={a.duration}
+                    durationEn={a.durationEn}
                     priceFrom={a.priceFrom}
                     priceOriginal={a.priceOriginal}
                     category={a.category}
+                    categoryKey={a.categoryKey}
                     badge={a.badge}
+                    badgeKey={a.badgeKey}
                     badgeRed={a.badgeRed}
                     features={a.features}
+                    featureKeys={a.featureKeys}
                     banner={a.banner}
                   />
                 ))}
@@ -178,13 +195,13 @@ export default function DestinationPage() {
             </>
           ) : (
             <div className="py-16 text-center text-slate-500">
-              <p>ไม่พบกิจกรรมในหมวดนี้</p>
+              <p>{t("noActivitiesInCategory")}</p>
               <button
                 type="button"
                 onClick={() => setSelectedFilter("all")}
                 className="mt-4 text-primary font-medium hover:underline"
               >
-                แสดงทั้งหมด
+                {t("showAll")}
               </button>
             </div>
           )}

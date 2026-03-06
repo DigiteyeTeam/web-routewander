@@ -7,6 +7,8 @@ import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
 import { FILTER_CATEGORIES, searchActivities } from "@/data/activities";
 import { useMemo, useState } from "react";
+import { useTranslation } from "@/context/LocaleContext";
+import { filterKeyToTKey } from "@/i18n/translations";
 
 type SearchPageClientProps = {
   initialQuery: string;
@@ -14,6 +16,7 @@ type SearchPageClientProps = {
 
 export default function SearchPageClient({ initialQuery }: SearchPageClientProps) {
   const q = initialQuery;
+  const { t } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState("all");
 
   const allResults = useMemo(() => searchActivities(q || ""), [q]);
@@ -33,7 +36,7 @@ export default function SearchPageClient({ initialQuery }: SearchPageClientProps
         <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-8 w-full min-w-0">
           <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-              ผลการค้นหา {q ? `“${q}”` : ""}
+              {t("searchResults")} {q ? `“${q}”` : ""}
             </h1>
           </div>
 
@@ -73,20 +76,19 @@ export default function SearchPageClient({ initialQuery }: SearchPageClientProps
                         : "bg-white text-slate-700 border border-slate-200 hover:border-primary hover:text-primary"
                     }`}
                   >
-                    {f.label}
+                    {t(filterKeyToTKey[f.key] ?? "filterAll")}
                   </button>
                 ))}
               </div>
             </div>
             <p className="text-sm text-slate-500">
-              {results.length}+ ผลลัพธ์ จากทั้งหมด {allResults.length} กิจกรรม
+              {results.length}+ {t("resultsFromTotal")} {allResults.length} {t("activities")}
             </p>
           </div>
 
           {results.length === 0 ? (
             <p className="text-slate-600">
-              ยังไม่มีกิจกรรมที่ตรงกับคำค้นนี้ ลองใช้คำอื่น หรือค้นหาด้วยชื่อเมือง เช่น
-              &quot;กรุงเทพ&quot; หรือ &quot;เชียงใหม่&quot; ดูนะครับ
+              {t("noSearchResults")}
             </p>
           ) : (
             <>
@@ -162,17 +164,22 @@ export default function SearchPageClient({ initialQuery }: SearchPageClientProps
                     key={a.id}
                     id={a.id}
                     title={a.title}
+                    titleEn={a.titleEn}
                     image={a.image}
                     imageAlt={a.imageAlt}
                     rating={a.rating}
                     reviewCount={a.reviewCount}
                     duration={a.duration}
+                    durationEn={a.durationEn}
                     priceFrom={a.priceFrom}
                     priceOriginal={a.priceOriginal}
                     category={a.category}
+                    categoryKey={a.categoryKey}
                     badge={a.badge}
+                    badgeKey={a.badgeKey}
                     badgeRed={a.badgeRed}
                     features={a.features}
+                    featureKeys={a.featureKeys}
                     banner={a.banner}
                   />
                 ))}

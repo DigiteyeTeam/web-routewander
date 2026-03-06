@@ -13,6 +13,9 @@ import {
 } from "@/data/activities";
 import ActivityCard from "@/components/ActivityCard";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useTranslation } from "@/context/LocaleContext";
+import { slugToCityKey } from "@/i18n/translations";
 
 function AboutIcon({ type }: { type: string }) {
   if (type === "cancel") {
@@ -62,7 +65,9 @@ export default function ActivityPage() {
   const [date, setDate] = useState("");
   const [language, setLanguage] = useState("ไทย / อังกฤษ");
   const { addItem } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const router = useRouter();
+  const { t, locale } = useTranslation();
 
   if (!activity) {
     return (
@@ -70,8 +75,8 @@ export default function ActivityPage() {
         <Header />
         <main className="pt-24 pb-16 min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <p className="text-slate-600 mb-4">ไม่พบกิจกรรมนี้</p>
-            <Link href="/" className="text-primary font-medium hover:underline">กลับหน้าแรก</Link>
+            <p className="text-slate-600 mb-4">{t("notFoundActivity")}</p>
+            <Link href="/" className="text-primary font-medium hover:underline">{t("backToHome")}</Link>
           </div>
         </main>
         <Footer />
@@ -86,10 +91,12 @@ export default function ActivityPage() {
       ? selectedOption.price
       : selectedOption.price * travelers
     : activity.priceFrom * travelers;
-  const priceLabel = selectedOption?.pricePerGroup ? "ต่อกลุ่ม" : "ต่อคน";
+  const priceLabel = selectedOption?.pricePerGroup ? t("perGroup") : t("perPerson");
   const canGoToCart = date.trim() !== "";
   const optionTitleForCart = selectedOption?.title ?? activity.title;
-  const cityName = DESTINATION_NAMES[activity.slug] || activity.slug;
+  const cityKey = slugToCityKey[activity.slug];
+  const cityName = cityKey ? t(cityKey) : (DESTINATION_NAMES[activity.slug] || activity.slug);
+  const inWishlist = isInWishlist(activity.id);
 
   return (
     <>
@@ -98,11 +105,11 @@ export default function ActivityPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-8 w-full min-w-0">
           {/* Breadcrumb – ซ่อนบนมือถือให้คล้ายตัวอย่าง */}
           <nav className="hidden sm:block py-3 text-sm text-slate-500">
-            <Link href="/" className="hover:text-primary">หน้าแรก</Link>
+            <Link href="/" className="hover:text-primary">{t("home")}</Link>
             <span className="mx-2">/</span>
-            <Link href={`/destination/${activity.slug}`} className="hover:text-primary">สำรวจ {cityName}</Link>
+            <Link href={`/destination/${activity.slug}`} className="hover:text-primary">{t("explore")} {cityName}</Link>
             <span className="mx-2">/</span>
-            <span className="text-slate-800 truncate max-w-[200px] inline-block align-bottom">{activity.title}</span>
+            <span className="text-slate-800 truncate max-w-[200px] inline-block align-bottom">{locale === "en" && activity.titleEn ? activity.titleEn : activity.title}</span>
           </nav>
 
           {/* การ์ดหลักของกิจกรรม – บนมือถือเอาพื้นหลังขาวออก เหลือเฉพาะเดสก์ท็อป */}
@@ -116,10 +123,13 @@ export default function ActivityPage() {
                     <Image src={activity.image} alt={activity.imageAlt} fill className="object-cover" priority />
                     <button
                       type="button"
-                      className="absolute top-3 right-3 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center"
-                      aria-label="บันทึก"
+                      className={`absolute top-3 right-3 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
+                        inWishlist ? "bg-red-500/90 text-white hover:bg-red-500" : "bg-white/90 text-slate-600 hover:bg-white hover:text-red-500"
+                      }`}
+                      aria-label={t("addToWishlist")}
+                      onClick={() => toggleWishlist(activity.id)}
                     >
-                      <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill={inWishlist ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -132,7 +142,7 @@ export default function ActivityPage() {
                       type="button"
                       className="absolute bottom-3 right-3 px-3 py-1.5 rounded bg-black/50 text-white text-xs sm:text-sm"
                     >
-                      แชร์
+                      {t("share")}
                     </button>
                     {/* จุดบอกจำนวนรูป – สไตล์คล้าย dot carousel */}
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
@@ -162,7 +172,7 @@ export default function ActivityPage() {
                     </span>
                   )}
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 mb-2">
-                    {activity.title}
+                    {locale === "en" && activity.titleEn ? activity.titleEn : activity.title}
                   </h1>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                     <span className="inline-flex items-center gap-1 text-amber-600">
@@ -172,41 +182,58 @@ export default function ActivityPage() {
                       <span>{activity.rating}</span>
                     </span>
                     <span className="text-slate-600">
-                      ({activity.reviewCount.toLocaleString()} รีวิว)
+                      ({activity.reviewCount.toLocaleString()} {t("reviews")})
                     </span>
                     <span className="text-slate-500">·</span>
-                    <span className="text-slate-600">ผู้ให้บริการ: Route Wander</span>
+                    <span className="text-slate-600">{t("provider")}: Route Wander</span>
                   </div>
                 </div>
 
-              {activity.description && (
+              {(activity.description || activity.descriptionEn) && (
                 <p className="text-sm sm:text-base text-slate-700 mb-8">
-                  {activity.description}
+                  {locale === "en" && activity.descriptionEn ? activity.descriptionEn : activity.description}
                 </p>
               )}
 
-              {/* เกี่ยวกับกิจกรรมนี้ */}
-              {activity.about && activity.about.length > 0 && (
-                <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">เกี่ยวกับกิจกรรมนี้</h2>
-                  <ul className="space-y-4">
-                    {activity.about.map((item, i) => (
-                      <li key={i} className="flex gap-3">
-                        <AboutIcon type={item.icon} />
-                        <div>
-                          <p className="font-medium text-slate-800">{item.title}</p>
-                          <p className="text-sm text-slate-600">{item.text}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
+              {/* About this activity - labels from t() so they follow locale */}
+              <section className="mb-8">
+                <h2 className="text-lg font-bold text-slate-800 mb-4">{t("aboutThisActivity")}</h2>
+                <ul className="space-y-4">
+                  <li className="flex gap-3">
+                    <AboutIcon type="cancel" />
+                    <div>
+                      <p className="font-medium text-slate-800">{t("freeCancellation")}</p>
+                      <p className="text-sm text-slate-600">{t("cancelFree24h")}</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <AboutIcon type="pay" />
+                    <div>
+                      <p className="font-medium text-slate-800">{t("aboutBookNowTitle")}</p>
+                      <p className="text-sm text-slate-600">{t("aboutBookNowText")}</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <AboutIcon type="clock" />
+                    <div>
+                      <p className="font-medium text-slate-800">{t("aboutDurationTitle")}</p>
+                      <p className="text-sm text-slate-600">{(locale === "en" && activity.durationEn ? activity.durationEn : activity.duration)} — {t("aboutDurationText")}</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <AboutIcon type="guide" />
+                    <div>
+                      <p className="font-medium text-slate-800">{t("aboutGuideTitle")}</p>
+                      <p className="text-sm text-slate-600">{t("aboutGuideText")}</p>
+                    </div>
+                  </li>
+                </ul>
+              </section>
 
               {/* เลือกจาก X ตัวเลือก */}
               {activity.options && activity.options.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">เลือกจาก {activity.options.length} ตัวเลือก</h2>
+                  <h2 className="text-lg font-bold text-slate-800 mb-4">{t("chooseFromOptions")} {activity.options.length} {t("options")}</h2>
                   <div className="space-y-4">
                     {activity.options.map((opt, i) => (
                       <div
@@ -216,22 +243,22 @@ export default function ActivityPage() {
                         }`}
                       >
                         <h3 className="font-semibold text-slate-800 mb-2">{opt.title}</h3>
-                        <p className="text-sm text-slate-600 mb-2">{opt.duration} · ไกด์: {opt.guideLang}</p>
-                        <p className="text-sm text-slate-500 mb-3">พบกันที่ {opt.meeting}</p>
+                        <p className="text-sm text-slate-600 mb-2">{opt.duration} · {t("guideLabel")}: {opt.guideLang}</p>
+                        <p className="text-sm text-slate-500 mb-3">{t("meetingAt")} {opt.meeting}</p>
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <p className="text-slate-700">
-                            เริ่มต้น <strong>{opt.price.toLocaleString()} THB</strong>
-                            {opt.pricePerGroup ? " ต่อกลุ่ม" : " ต่อคน"}
+                            {t("startingFrom")} <strong>{opt.price.toLocaleString()} THB</strong>
+                            {opt.pricePerGroup ? ` ${t("perGroup")}` : ` ${t("perPerson")}`}
                           </p>
                           <button
                             type="button"
                             onClick={() => setSelectedOptionIndex(i)}
                             className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-sm"
                           >
-                            เลือก
+                            {t("select")}
                           </button>
                         </div>
-                        <p className="text-xs text-green-600 mt-2">ยกเลิกฟรี</p>
+                        <p className="text-xs text-green-600 mt-2">{t("freeCancellation")}</p>
                       </div>
                     ))}
                   </div>
@@ -241,7 +268,7 @@ export default function ActivityPage() {
               {/* ไฮไลท์ */}
               {activity.highlights && activity.highlights.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">ไฮไลท์</h2>
+                  <h2 className="text-lg font-bold text-slate-800 mb-4">{t("highlights")}</h2>
                   <ul className="list-disc list-inside text-slate-700 space-y-1">
                     {activity.highlights.map((h, i) => (
                       <li key={i}>{h}</li>
@@ -254,7 +281,7 @@ export default function ActivityPage() {
               <section className="mb-8 grid sm:grid-cols-2 gap-6">
                 {activity.included && activity.included.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-bold text-slate-800 mb-3">รวม</h2>
+                    <h2 className="text-lg font-bold text-slate-800 mb-3">{t("included")}</h2>
                     <ul className="space-y-2">
                       {activity.included.map((item, i) => (
                         <li key={i} className="flex items-center gap-2 text-slate-700">
@@ -266,7 +293,7 @@ export default function ActivityPage() {
                 )}
                 {activity.notIncluded && activity.notIncluded.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-bold text-slate-800 mb-3">ไม่รวม</h2>
+                    <h2 className="text-lg font-bold text-slate-800 mb-3">{t("notIncluded")}</h2>
                     <ul className="space-y-2">
                       {activity.notIncluded.map((item, i) => (
                         <li key={i} className="flex items-center gap-2 text-slate-700">
@@ -281,7 +308,7 @@ export default function ActivityPage() {
               {/* ไม่เหมาะสำหรับ */}
               {activity.notSuitableFor && activity.notSuitableFor.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-3">ไม่เหมาะสำหรับ</h2>
+                  <h2 className="text-lg font-bold text-slate-800 mb-3">{t("notSuitableFor")}</h2>
                   <p className="text-slate-600">{activity.notSuitableFor.join(", ")}</p>
                 </section>
               )}
@@ -289,16 +316,16 @@ export default function ActivityPage() {
               {/* จุดนัดพบ */}
               {activity.meetingPoint && (
                 <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-3">จุดนัดพบ</h2>
+                  <h2 className="text-lg font-bold text-slate-800 mb-3">{t("meetingPoint")}</h2>
                   <p className="text-slate-700 mb-2">{activity.meetingPoint}</p>
-                  <a href="#" className="text-primary font-medium text-sm hover:underline">เปิดใน Google Maps →</a>
+                  <a href="#" className="text-primary font-medium text-sm hover:underline">{t("openInMaps")} →</a>
                 </section>
               )}
 
               {/* ข้อมูลสำคัญ */}
               {activity.importantInfo && activity.importantInfo.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">ข้อมูลสำคัญ</h2>
+                  <h2 className="text-lg font-bold text-slate-800 mb-4">{t("importantInfo")}</h2>
                   <div className="space-y-4">
                     {activity.importantInfo.map((block, i) => (
                       <div key={i}>
@@ -317,7 +344,7 @@ export default function ActivityPage() {
               {/* กำหนดการเดินทาง */}
               {activity.itinerary && activity.itinerary.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">กำหนดการเดินทาง</h2>
+                  <h2 className="text-lg font-bold text-slate-800 mb-4">{t("itinerary")}</h2>
                   {itineraryOpen ? (
                     <>
                       <div className="flex flex-col md:flex-row gap-6">
@@ -369,7 +396,7 @@ export default function ActivityPage() {
                         </div>
                         <div className="md:w-80 lg:w-96 shrink-0 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/3] md:aspect-auto md:min-h-[280px]">
                           <iframe
-                            title="แผนที่"
+                            title={t("map")}
                             src={`https://www.google.com/maps?q=${encodeURIComponent(cityName + " ประเทศไทย")}&output=embed`}
                             className="w-full h-full min-h-[240px]"
                             allowFullScreen
@@ -380,19 +407,19 @@ export default function ActivityPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3 text-sm text-slate-500">
                         <span className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full bg-primary" /> จุดหลักที่หยุด
+                          <span className="w-3 h-3 rounded-full bg-primary" /> {t("mainStop")}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full border-2 border-slate-300 bg-slate-100" /> จุดที่หยุดอื่น ๆ
+                          <span className="w-3 h-3 rounded-full border-2 border-slate-300 bg-slate-100" /> {t("otherStops")}
                         </span>
                       </div>
                       <button type="button" onClick={() => setItineraryOpen(false)} className="mt-3 text-primary text-sm font-medium hover:underline">
-                        ซ่อนกำหนดการเดินทาง
+                        {t("hideItinerary")}
                       </button>
                     </>
                   ) : (
                     <button type="button" onClick={() => setItineraryOpen(true)} className="text-primary text-sm font-medium hover:underline">
-                      ดูกำหนดการเดินทางฉบับเต็ม
+                      {t("showItinerary")}
                     </button>
                   )}
                 </section>
@@ -430,27 +457,27 @@ export default function ActivityPage() {
             <aside className="lg:w-96 shrink-0 mt-4 lg:mt-0">
               <div className="lg:sticky lg:top-24 rounded-2xl border border-slate-200 bg-slate-50 lg:bg-white p-5 lg:p-6 shadow-sm">
                 {activity.badgeRed && (
-                  <p className="text-red-600 font-medium text-sm mb-3">{activity.badge}</p>
+                  <p className="text-red-600 font-medium text-sm mb-3">{activity.badgeKey ? t(activity.badgeKey) : activity.badge}</p>
                 )}
                 <p className="text-2xl font-bold text-slate-800 mb-6">
-                  จาก <strong>{displayPrice.toLocaleString()} THB</strong>{" "}
+                  {t("from")} <strong>{displayPrice.toLocaleString()} THB</strong>{" "}
                   <span className="text-base font-normal text-slate-500">{priceLabel}</span>
                 </p>
                 <div className="space-y-3 mb-6">
                   <label className="block">
-                    <span className="text-xs text-slate-500">จำนวนคน</span>
+                    <span className="text-xs text-slate-500">{t("travelersLabel")}</span>
                     <select
                       value={travelers}
                       onChange={(e) => setTravelers(Number(e.target.value))}
                       className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                        <option key={n} value={n}>{n} x นักเดินทาง</option>
+                        <option key={n} value={n}>{n} x {t("travelerUnit")}</option>
                       ))}
                     </select>
                   </label>
                   <label className="block">
-                    <span className="text-xs text-slate-500">วันที่</span>
+                    <span className="text-xs text-slate-500">{t("dateLabel")}</span>
                     <input
                       type="date"
                       value={date}
@@ -460,15 +487,15 @@ export default function ActivityPage() {
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs text-slate-500">ภาษาไกด์</span>
+                    <span className="text-xs text-slate-500">{t("languageLabel")}</span>
                     <select
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
                       className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
                     >
-                      <option value="ไทย / อังกฤษ">ภาษาไทย / อังกฤษ</option>
-                      <option value="ไทย">ภาษาไทย</option>
-                      <option value="อังกฤษ">ภาษาอังกฤษ</option>
+                      <option value="ไทย / อังกฤษ">{t("guideLangThaiAndEnglish")}</option>
+                      <option value="ไทย">{t("guideLangThai")}</option>
+                      <option value="อังกฤษ">{t("guideLangEnglish")}</option>
                     </select>
                   </label>
                 </div>
@@ -494,19 +521,19 @@ export default function ActivityPage() {
                   disabled={!canGoToCart}
                   className="w-full py-3 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold"
                 >
-                  ไปชำระที่รถเข็น
+                  {t("goToCart")}
                 </button>
                 {!canGoToCart && (
-                  <p className="text-xs text-slate-500 mt-2 text-center">กรุณาเลือกวันที่</p>
+                  <p className="text-xs text-slate-500 mt-2 text-center">{t("pleaseSelectDate")}</p>
                 )}
                 <div className="mt-6 space-y-3 text-sm">
                   <div className="flex gap-2">
                     <span className="text-green-600 shrink-0">✓</span>
-                    <p className="text-slate-600">ยกเลิกล่วงหน้าสูงสุด 24 ชั่วโมง เพื่อขอรับเงินคืนเต็มจำนวน</p>
+                    <p className="text-slate-600">{t("cancelFree24h")}</p>
                   </div>
                   <div className="flex gap-2">
                     <span className="text-green-600 shrink-0">✓</span>
-                    <p className="text-slate-600">จองตอนนี้ & จ่ายทีหลัง — ทำให้แผนการเดินทางของคุณยืดหยุ่น</p>
+                    <p className="text-slate-600">{t("bookNowPayLater")}</p>
                   </div>
                 </div>
               </div>
@@ -515,10 +542,10 @@ export default function ActivityPage() {
 
           {/* รีวิวลูกค้า — ปิดท้ายด้วยคอมเม้นให้คะแนน */}
           <section className="mt-10 pt-8 border-t border-slate-200">
-            <h2 className="text-xl font-bold text-slate-800 mb-6">รีวิวลูกค้า</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-6">{t("customerReviews")}</h2>
             <div className="flex flex-col lg:flex-row gap-8">
               <aside className="lg:w-56 shrink-0">
-                <p className="text-sm font-medium text-slate-500 mb-2">คะแนนโดยรวม</p>
+                <p className="text-sm font-medium text-slate-500 mb-2">{t("overallRating")}</p>
                 <p className="text-3xl font-bold text-slate-800">{activity.rating}/5</p>
                 <div className="flex items-center gap-1 text-amber-500 my-2">
                   {[1,2,3,4,5].map((s) => (
@@ -527,10 +554,10 @@ export default function ActivityPage() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-sm text-slate-500">อิงตาม {activity.reviewCount.toLocaleString()} รีวิว</p>
+                <p className="text-sm text-slate-500">{t("basedOnReviews")} {activity.reviewCount.toLocaleString()} {t("reviews")}</p>
                 {activity.reviewSummary && (
                   <div className="mt-6">
-                    <p className="text-sm font-medium text-slate-700 mb-3">สรุปรีวิว</p>
+                    <p className="text-sm font-medium text-slate-700 mb-3">{t("reviewSummary")}</p>
                     <div className="space-y-3">
                       <div>
                         <div className="flex justify-between text-sm mb-1">
@@ -543,7 +570,7 @@ export default function ActivityPage() {
                       </div>
                       <div>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-600">การขนส่ง</span>
+                          <span className="text-slate-600">{t("transportation")}</span>
                           <span className="font-medium text-slate-800">{activity.reviewSummary.transportation}/5</span>
                         </div>
                         <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
@@ -552,7 +579,7 @@ export default function ActivityPage() {
                       </div>
                       <div>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-600">คุ้มค่าเงิน</span>
+                          <span className="text-slate-600">{t("valueForMoney")}</span>
                           <span className="font-medium text-slate-800">{activity.reviewSummary.valueForMoney}/5</span>
                         </div>
                         <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
@@ -565,7 +592,7 @@ export default function ActivityPage() {
               </aside>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap gap-2 mb-6">
-                  <input type="search" placeholder="ค้นหารีวิว (เช่น ไกด์)" className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-slate-200 text-slate-800 placeholder:text-slate-400" />
+                  <input type="search" placeholder={t("searchReviewsPlaceholder")} className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-slate-200 text-slate-800 placeholder:text-slate-400" />
                   <select className="px-3 py-2 rounded-lg border border-slate-200 text-slate-700 bg-white text-sm">
                     <option>เรียงตาม: ที่แนะนำ</option>
                   </select>
@@ -603,12 +630,12 @@ export default function ActivityPage() {
                       )}
                       <p className="text-slate-700 text-sm leading-relaxed">{r.text}</p>
                       <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
-                        <span className="text-slate-500">ข้อมูลนี้มีประโยชน์ไหม?</span>
-                        <button type="button" className="text-slate-600 hover:text-primary flex items-center gap-1" aria-label="มีประโยชน์">
+                        <span className="text-slate-500">{t("wasThisHelpful")}</span>
+                        <button type="button" className="text-slate-600 hover:text-primary flex items-center gap-1" aria-label={t("helpful")}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .014-.002.028-.002.043V7m0 5v5a2 2 0 01-2 2h-2c-1.066 0-1.99.8-2.114 1.878A2.003 2.003 0 017 18v-4" /></svg>
                           {r.helpfulCount ?? 0}
                         </button>
-                        <button type="button" className="text-primary font-medium hover:underline">แปลภาษา</button>
+                        <button type="button" className="text-primary font-medium hover:underline">{t("translate")}</button>
                       </div>
                     </li>
                   ))}

@@ -1,15 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import logo from "@/images/apple-touch-icon.png";
+import { useTranslation } from "@/context/LocaleContext";
 
-const footerLinks = [
-  { label: "About us", href: "/about" },
-  { label: "Contact", href: "/contact" },
-  { label: "Help Center", href: "/help" },
-  { label: "Terms & conditions", href: "/terms" },
-  { label: "Privacy policy", href: "/privacy" },
+const footerLinkKeys = [
+  { key: "aboutUs" as const, href: "/about" },
+  { key: "contact" as const, href: "/contact" },
+  { key: "helpCenter" as const, href: "/help" },
+  { key: "terms" as const, href: "/terms" },
+  { key: "privacy" as const, href: "/privacy" },
 ];
 
 export default function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="bg-slate-800 text-slate-300 py-12 px-4 sm:px-5 md:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto w-full min-w-0">
@@ -32,19 +36,19 @@ export default function Footer() {
             />
           </Link>
           <nav className="flex flex-wrap gap-6">
-            {footerLinks.map((link) => (
+            {footerLinkKeys.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className="hover:text-white transition-colors text-sm"
               >
-                {link.label}
+                {t(link.key)}
               </Link>
             ))}
           </nav>
         </div>
         <p className="text-slate-500 text-sm">
-          Tours in Thailand for international travelers. Route Wander — local Thai guides.
+          {t("footerTagline")}
         </p>
         <p className="text-slate-600 text-xs mt-2">© {new Date().getFullYear()} Route Wander</p>
       </div>

@@ -2,20 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/context/LocaleContext";
+import { useMockAuth } from "@/context/MockAuthContext";
 
 export default function MenuPage() {
   const router = useRouter();
+  const { t, locale, setLocale } = useTranslation();
+  const { user: mockUser, signOut } = useMockAuth();
 
   return (
     <main className="min-h-screen bg-white text-slate-800">
-      {/* แถบหัวเมนู */}
       <header className="bg-slate-800 text-white">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="text-sm font-semibold">เมนู</span>
+          <span className="text-sm font-semibold">{t("menu")}</span>
           <button
             type="button"
             className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-500/60"
-            aria-label="ปิดเมนู"
+            aria-label={t("closeMenu")}
             onClick={() => router.back()}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,9 +32,9 @@ export default function MenuPage() {
       <section className="max-w-7xl mx-auto px-4 py-4 space-y-6 text-sm">
         {/* เมนูหลัก */}
         <div className="space-y-2">
-          {/* Places to see */}
+          {/* Places to see — ตรงกับ desktop: ลิงก์ไปหน้าจุดหมายยอดนิยม */}
           <Link
-            href="/destination/bangkok"
+            href="/places"
             className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50"
           >
             <span className="flex items-center gap-2">
@@ -51,14 +54,14 @@ export default function MenuPage() {
                   />
                 </svg>
               </span>
-              <span className="font-medium">Places to see</span>
+              <span className="font-medium">{t("placesToSee")}</span>
             </span>
             <span className="text-slate-400">›</span>
           </Link>
 
-          {/* Things to do */}
+          {/* Things to do — ตรงกับ desktop: Top experiences → หน้าแรก */}
           <Link
-            href="/activity/1"
+            href="/"
             className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50"
           >
             <span className="flex items-center gap-2">
@@ -72,7 +75,7 @@ export default function MenuPage() {
                   />
                 </svg>
               </span>
-              <span className="font-medium">Things to do</span>
+              <span className="font-medium">{t("thingsToDo")}</span>
             </span>
             <span className="text-slate-400">›</span>
           </Link>
@@ -93,7 +96,7 @@ export default function MenuPage() {
                   />
                 </svg>
               </span>
-              <span className="font-medium">รายการที่อยากได้</span>
+              <span className="font-medium">{t("wishlist")}</span>
             </span>
             <span className="text-slate-400">›</span>
           </Link>
@@ -114,48 +117,108 @@ export default function MenuPage() {
                   />
                 </svg>
               </span>
-              <span className="font-medium">รถเข็น</span>
+              <span className="font-medium">{t("cart")}</span>
+            </span>
+            <span className="text-slate-400">›</span>
+          </Link>
+
+          {/* Updates — การจองของฉัน / แจ้งเตือนหลังชำระเงิน */}
+          <Link
+            href="/updates"
+            className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50"
+          >
+            <span className="flex items-center gap-2">
+              <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary text-white">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </span>
+              <span className="font-medium">{t("updatesTitle")}</span>
             </span>
             <span className="text-slate-400">›</span>
           </Link>
         </div>
 
-        {/* TH / THB & Profile */}
+        {/* ภาษา/สกุลเงิน & Profile — ตรงกับ desktop: TH | EN */}
         <div className="pt-3 border-t border-slate-200 space-y-2">
-          {/* TH / THB */}
-          <button
-            type="button"
-            className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary text-white text-xs font-semibold">
-                TH
-              </span>
-              <span className="font-medium">TH / THB</span>
-            </span>
-            <span className="text-slate-400">›</span>
-          </button>
+          {/* TH / THB — สลับภาษาได้เหมือนเดสก์ท็อป */}
+          <div className="px-3 py-3 rounded-lg border border-slate-200">
+            <p className="text-xs text-slate-500 mb-2">{t("languageCurrency")}</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLocale("th")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  locale === "th" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                <span className="w-6 h-6 inline-flex items-center justify-center rounded-full bg-white/20 text-xs">TH</span>
+                {t("guideLangThai")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale("en")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  locale === "en" ? "bg-primary text-white" : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                <span className="w-6 h-6 inline-flex items-center justify-center rounded-full bg-white/20 text-xs">EN</span>
+                {t("guideLangEnglish")}
+              </button>
+            </div>
+          </div>
 
-          {/* Profile */}
-          <Link
-            href="/profile"
-            className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-slate-50"
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary text-white">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"
-                  />
-                </svg>
+          {/* Login/Register หรือ ผู้ใช้ + ออกจากระบบ — ตรงกับ desktop */}
+          {mockUser ? (
+            <>
+              <div className="w-full px-3 py-3 rounded-lg border border-slate-200 bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary text-white">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-800 truncate">{t("mockUserName")}</p>
+                    <p className="text-xs text-slate-500 truncate">{mockUser.email}</p>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  signOut();
+                  router.back();
+                }}
+                className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-left"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4" />
+                    </svg>
+                  </span>
+                  <span className="font-medium text-slate-700">{t("logOut")}</span>
+                </span>
+                <span className="text-slate-400">›</span>
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50"
+            >
+              <span className="flex items-center gap-2">
+                <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary text-white">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                </span>
+                <span className="font-medium">{t("loginOrRegister")}</span>
               </span>
-              <span className="font-medium">Profile</span>
-            </span>
-            <span className="text-slate-400">›</span>
-          </Link>
+              <span className="text-slate-400">›</span>
+            </Link>
+          )}
         </div>
       </section>
     </main>

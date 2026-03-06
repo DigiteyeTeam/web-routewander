@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { Inter, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { BookingsProvider } from "@/context/BookingsContext";
+import { LocaleProvider } from "@/context/LocaleContext";
+import { WishlistProvider } from "@/context/WishlistContext";
+import { MockAuthProvider } from "@/context/MockAuthContext";
+import SessionProvider from "@/components/SessionProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +43,17 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${inter.variable} ${notoSansThai.variable}`}>
       <body className="font-sans">
-        <CartProvider>{children}</CartProvider>
+        <LocaleProvider>
+          <WishlistProvider>
+            <MockAuthProvider>
+              <SessionProvider>
+                <CartProvider>
+                <BookingsProvider>{children}</BookingsProvider>
+              </CartProvider>
+              </SessionProvider>
+            </MockAuthProvider>
+          </WishlistProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
