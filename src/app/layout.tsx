@@ -7,6 +7,7 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { MockAuthProvider } from "@/context/MockAuthContext";
 import SessionProvider from "@/components/SessionProvider";
+import ChatBot from "@/components/ChatBot";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,7 +49,10 @@ export default function RootLayout({
             <MockAuthProvider>
               <SessionProvider>
                 <CartProvider>
-                <BookingsProvider>{children}</BookingsProvider>
+                <BookingsProvider>
+                  {children}
+                  <ChatBot />
+                </BookingsProvider>
               </CartProvider>
               </SessionProvider>
             </MockAuthProvider>

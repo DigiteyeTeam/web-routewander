@@ -50,9 +50,25 @@ const thingsList: { nameKey: TranslationKey; href: string; image: string }[] = [
   { nameKey: "navThingElephantSanctuary", href: "/activity/9", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=100&q=80" },
 ];
 
+const guidesCategories: { labelKey: TranslationKey; href: string; active: boolean; guideType: "all" | "general" | "local" }[] = [
+  { labelKey: "navGuidesAll", href: "/guides", active: true, guideType: "all" },
+  { labelKey: "generalGuide", href: "/guides?type=general", active: false, guideType: "general" },
+  { labelKey: "localGuide", href: "/guides?type=local", active: false, guideType: "local" },
+];
+
+const guidesList: { nameKey: TranslationKey; guideType: "general" | "local"; locationKey: TranslationKey; href: string; image: string }[] = [
+  { nameKey: "navGuide1", guideType: "local", locationKey: "cityBangkok", href: "/guides/1", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" },
+  { nameKey: "navGuide2", guideType: "general", locationKey: "cityBangkok", href: "/guides/2", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" },
+  { nameKey: "navGuide3", guideType: "local", locationKey: "cityChiangMai", href: "/guides/3", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80" },
+  { nameKey: "navGuide4", guideType: "general", locationKey: "cityPhuket", href: "/guides/4", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" },
+  { nameKey: "navGuide5", guideType: "local", locationKey: "cityKrabi", href: "/guides/5", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" },
+  { nameKey: "navGuide6", guideType: "general", locationKey: "cityChiangMai", href: "/guides/6", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" },
+];
+
 export default function Header() {
   const [placesOpen, setPlacesOpen] = useState(false);
   const [thingsOpen, setThingsOpen] = useState(false);
+  const [guidesOpen, setGuidesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
@@ -60,6 +76,7 @@ export default function Header() {
   const closeDropdowns = () => {
     setPlacesOpen(false);
     setThingsOpen(false);
+    setGuidesOpen(false);
     setProfileOpen(false);
   };
 
@@ -87,7 +104,7 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-6 text-slate-100 md:text-slate-700">
           <div
             className="relative"
-            onMouseEnter={() => { setPlacesOpen(true); setThingsOpen(false); }}
+            onMouseEnter={() => { setPlacesOpen(true); setThingsOpen(false); setGuidesOpen(false); }}
             onMouseLeave={() => setPlacesOpen(false)}
           >
             <button
@@ -166,7 +183,7 @@ export default function Header() {
           </div>
           <div
             className="relative"
-            onMouseEnter={() => { setThingsOpen(true); setPlacesOpen(false); }}
+            onMouseEnter={() => { setThingsOpen(true); setPlacesOpen(false); setGuidesOpen(false); }}
             onMouseLeave={() => setThingsOpen(false)}
           >
             <button
@@ -232,6 +249,92 @@ export default function Header() {
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">
                               {t(item.nameKey)}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div
+            className="relative"
+            onMouseEnter={() => { setGuidesOpen(true); setPlacesOpen(false); setThingsOpen(false); }}
+            onMouseLeave={() => setGuidesOpen(false)}
+          >
+            <button
+              type="button"
+              onClick={() => setGuidesOpen((v) => !v)}
+              className={`flex items-center gap-1 font-medium text-sm transition-colors ${guidesOpen ? "text-primary border-b-2 border-primary pb-0.5 -mb-px" : "text-slate-700 hover:text-primary"}`}
+              aria-expanded={guidesOpen}
+              aria-haspopup="true"
+            >
+              {t("navGuides")}
+              <svg
+                className={`w-4 h-4 transition-transform ${guidesOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {guidesOpen && (
+              <div className="absolute left-0 top-full pt-1 z-50">
+                <div className="w-[600px] max-w-[min(600px,calc(100vw-2rem))] bg-white rounded-b-lg shadow-xl border border-t-0 border-slate-200 overflow-hidden">
+                  <div className="flex">
+                    <div className="w-48 shrink-0 py-4 pl-4 pr-2 border-r border-slate-100">
+                      {guidesCategories.map((cat) => (
+                        <Link
+                          key={cat.href}
+                          href={cat.href}
+                          onClick={closeDropdowns}
+                          className={`flex items-center gap-2 py-2.5 px-3 rounded-lg text-sm transition-colors ${
+                            cat.active
+                              ? "text-primary font-semibold bg-primary-light"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-primary"
+                          }`}
+                        >
+                          {cat.guideType === "local" && (
+                            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                          )}
+                          {cat.guideType === "general" && (
+                            <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+                          )}
+                          {cat.guideType === "all" && cat.active && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          )}
+                          {cat.guideType === "all" && !cat.active && <span className="w-1.5 shrink-0" />}
+                          {t(cat.labelKey)}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="flex-1 py-4 px-4 grid grid-cols-2 gap-x-4 gap-y-3">
+                      {guidesList.map((guide, idx) => (
+                        <Link
+                          key={idx}
+                          href={guide.href}
+                          onClick={closeDropdowns}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group"
+                        >
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-200">
+                            <Image
+                              src={guide.image}
+                              alt=""
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${guide.guideType === "local" ? "bg-green-500" : "bg-orange-500"}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">
+                              {t(guide.nameKey)}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">
+                              {guide.guideType === "local" ? t("localGuide") : t("generalGuide")} · {t(guide.locationKey)}
                             </p>
                           </div>
                         </Link>

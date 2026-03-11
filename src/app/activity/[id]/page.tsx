@@ -11,6 +11,7 @@ import {
   DESTINATION_NAMES,
   getActivitiesByDestination,
 } from "@/data/activities";
+import { getGuideById } from "@/data/guides";
 import ActivityCard from "@/components/ActivityCard";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -53,6 +54,7 @@ export default function ActivityPage() {
   const params = useParams();
   const id = (params?.id as string) || "";
   const activity = useMemo(() => getActivityById(id), [id]);
+  const guide = useMemo(() => activity?.guideId ? getGuideById(activity.guideId) : null, [activity]);
 
   const related = useMemo(() => {
     if (!activity) return [];
@@ -186,7 +188,34 @@ export default function ActivityPage() {
                     </span>
                     <span className="text-slate-500">·</span>
                     <span className="text-slate-600">{t("provider")}: Route Wander</span>
+                    {activity.tripCode && (
+                      <>
+                        <span className="text-slate-500">·</span>
+                        <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{activity.tripCode}</span>
+                      </>
+                    )}
                   </div>
+                  {guide && (
+                    <div className="flex items-center gap-3 mt-3 p-3 bg-slate-50 rounded-xl">
+                      <Link href={`/guides/${guide.id}`} className="shrink-0">
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-200">
+                          <Image src={guide.image} alt="" width={48} height={48} className="object-cover w-full h-full" />
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${guide.guideType === "local" ? "bg-green-500" : "bg-orange-500"}`} />
+                        </div>
+                      </Link>
+                      <div className="min-w-0 flex-1">
+                        <Link href={`/guides/${guide.id}`} className="font-semibold text-slate-800 hover:text-primary transition-colors">
+                          {t(guide.nameKey)}
+                        </Link>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${guide.guideType === "local" ? "bg-green-500 text-white" : "bg-orange-500 text-white"}`}>
+                            {guide.guideType === "local" ? t("localGuide") : t("generalGuide")}
+                          </span>
+                          <span className="font-mono">{guide.licenseNumber}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
               {(activity.description || activity.descriptionEn) && (
@@ -225,6 +254,11 @@ export default function ActivityPage() {
                     <div>
                       <p className="font-medium text-slate-800">{t("aboutGuideTitle")}</p>
                       <p className="text-sm text-slate-600">{t("aboutGuideText")}</p>
+                      {activity.guideType && (
+                        <span className={`inline-block mt-2 px-2.5 py-1 rounded-full text-xs font-semibold ${activity.guideType === "local" ? "bg-green-500 text-white" : "bg-orange-500 text-white"}`}>
+                          {activity.guideType === "local" ? t("localGuide") : t("generalGuide")}
+                        </span>
+                      )}
                     </div>
                   </li>
                 </ul>

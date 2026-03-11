@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import SectionDestinationsScroll from "@/components/SectionDestinationsScroll";
+// import SectionDestinationsScroll from "@/components/SectionDestinationsScroll"; // ปิดไว้ก่อน เผื่อเอามาใช้ทีหลัง
 import SectionExperiences from "@/components/SectionExperiences";
 import BodyFooterLinks from "@/components/BodyFooterLinks";
 import Footer from "@/components/Footer";
@@ -11,7 +11,7 @@ export default function HomePage() {
       <Header />
       <main>
         <Hero />
-        <SectionDestinationsScroll />
+        {/* <SectionDestinationsScroll /> ปิดไว้ก่อน เผื่อเอามาใช้ทีหลัง */}
         <SectionExperiences />
         <BodyFooterLinks />
       </main>

@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useTranslation } from "@/context/LocaleContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { filterKeyToTKey, featureKeyToTKey } from "@/i18n/translations";
-import type { FeatureKey } from "@/data/activities";
+import type { FeatureKey, GuideType } from "@/data/activities";
+import { getGuideById } from "@/data/guides";
 
 export type ActivityCardProps = {
   id: string;
@@ -28,6 +29,9 @@ export type ActivityCardProps = {
   priceOriginal?: number;
   banner?: string;
   bannerKey?: "certifiedByRouteWander" | "originalsByRouteWander";
+  guideType?: GuideType;
+  guideId?: string;
+  tripCode?: string;
   className?: string;
 };
 
@@ -52,9 +56,16 @@ export default function ActivityCard({
   priceOriginal,
   banner,
   bannerKey,
+  guideType,
+  guideId,
+  tripCode,
   className = "",
 }: ActivityCardProps) {
   const { t, locale } = useTranslation();
+  const guideLabel = guideType === "local" ? t("localGuide") : guideType === "general" ? t("generalGuide") : null;
+  const guideColorClass = guideType === "local" ? "bg-green-500 text-white" : guideType === "general" ? "bg-orange-500 text-white" : "";
+  const guide = guideId ? getGuideById(guideId) : null;
+  const guideName = guide ? t(guide.nameKey) : null;
   const { toggleWishlist, isInWishlist } = useWishlist();
   const inWishlist = isInWishlist(id);
   const displayBanner = bannerKey ? t(bannerKey) : banner;
@@ -106,14 +117,34 @@ export default function ActivityCard({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+            {guideLabel && (
+              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${guideColorClass}`}>
+                {guideLabel}
+              </span>
+            )}
+            {tripCode && (
+              <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-mono">
+                {tripCode}
+              </span>
+            )}
+          </div>
         </div>
         <div className="p-3">
           {displayCategory && (
             <p className="text-xs text-slate-500 mb-1">{displayCategory}</p>
           )}
-          <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-1.5 group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
             {displayTitle}
           </h3>
+          {guideName && (
+            <p className="text-xs text-primary truncate mb-1 inline-flex items-center gap-1">
+              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {guideName}
+            </p>
+          )}
           <p className="text-xs text-slate-500 mb-2">{displayDuration}{featuresText}</p>
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1 text-amber-600 text-sm">

@@ -58,6 +58,9 @@ export default function WishlistPage() {
                     features={a.features}
                     featureKeys={a.featureKeys}
                     banner={a.banner}
+                    guideType={a.guideType}
+                    guideId={a.guideId}
+                    tripCode={a.tripCode}
                   />
                 ))}
               </div>
