@@ -338,7 +338,8 @@ function ActivityCard({
 }: {
   activity: ActivityItem & { locationName?: string };
   locale: string;
-  t: (key: string) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: any) => string;
 }) {
   const guide = activity.guideId ? getGuideById(activity.guideId) : null;
   const guideName = guide ? t(guide.nameKey) : null;
@@ -404,7 +405,8 @@ function ActivityCard({
   );
 }
 
-function ActivityCardLarge({ activity, locale, t }: { activity: ActivityItem; locale: string; t: (key: string) => string }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ActivityCardLarge({ activity, locale, t }: { activity: ActivityItem; locale: string; t: (key: any) => string }) {
   const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
   const locationName = locale === "en" ? location?.locationNameEn : location?.locationName;
   const guide = activity.guideId ? getGuideById(activity.guideId) : null;

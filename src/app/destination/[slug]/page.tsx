@@ -483,7 +483,8 @@ function MapActivityCard({
 }: {
   activity: ActivityItem & { locationName?: string };
   locale: string;
-  t: (key: string) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: any) => string;
 }) {
   const guide = activity.guideId ? getGuideById(activity.guideId) : null;
   const guideName = guide ? t(guide.nameKey) : null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
@@ -11,7 +11,7 @@ import { guides } from "@/data/guides";
 
 type GuideTypeFilter = "all" | "general" | "local";
 
-export default function GuidesPage() {
+function GuidesPageContent() {
   const { t, locale } = useTranslation();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
@@ -169,5 +169,17 @@ export default function GuidesPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function GuidesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    }>
+      <GuidesPageContent />
+    </Suspense>
   );
 }

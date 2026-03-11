@@ -16,7 +16,7 @@ type ExploreMapProps = {
   center: Coordinates;
   zoom: number;
   onMarkerClick: (activity: ActivityItem) => void;
-  selectedActivity: ActivityItem | null;
+  selectedActivity: ActivityWithLocation | null;
   locale: string;
 };
 
