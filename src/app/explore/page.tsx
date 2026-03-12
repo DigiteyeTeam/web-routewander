@@ -411,8 +411,7 @@ function ExplorePageContent() {
               className={`md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
                 showMobilePanel && selectedLocation ? "translate-y-0" : "translate-y-full"
               }`}
-              style={{ zIndex: 9999 }}
-              style={{ maxHeight: "70vh" }}
+              style={{ zIndex: 9999, maxHeight: "70vh" }}
             >
               {/* Handle Bar */}
               <div className="pt-3 pb-2 flex justify-center">
