@@ -30,7 +30,7 @@ const placesList: { nameKey: TranslationKey; locationKey: TranslationKey; href: 
 ];
 
 const thingsCategories: { labelKey: TranslationKey; href: string; active: boolean }[] = [
-  { labelKey: "navThingsTop", href: "/", active: true },
+  { labelKey: "navThingsTop", href: "/activities", active: true },
   { labelKey: "navThingsCulture", href: "/destination/bangkok?filter=culture", active: false },
   { labelKey: "navThingsFood", href: "/destination/bangkok?filter=food-drink", active: false },
   { labelKey: "navThingsNature", href: "/destination/chiang-mai?filter=attraction", active: false },

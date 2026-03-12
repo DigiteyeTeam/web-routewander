@@ -118,6 +118,9 @@ export default function PlacesMap({
 
       marker.on("click", () => {
         onMarkerClick(dest.slug);
+        if (window.innerWidth < 768) {
+          setTimeout(() => marker.closePopup(), 100);
+        }
       });
 
       marker.addTo(map);
@@ -194,6 +197,15 @@ export default function PlacesMap({
         }
         .destination-popup .popup-link:hover {
           text-decoration: underline;
+        }
+        .leaflet-pane,
+        .leaflet-control,
+        .leaflet-top,
+        .leaflet-bottom {
+          z-index: 1 !important;
+        }
+        .leaflet-popup-pane {
+          z-index: 2 !important;
         }
       `}</style>
       <div ref={mapRef} className="w-full h-full" />

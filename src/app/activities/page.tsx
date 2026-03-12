@@ -33,7 +33,7 @@ type LocationGroup = {
   tripCount: number;
 };
 
-export default function PlacesPage() {
+export default function ActivitiesPage() {
   const { t, locale } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -135,7 +135,7 @@ export default function PlacesPage() {
             {viewMode === "map" && (
               <div className="flex items-center justify-between gap-2 md:hidden">
                 <h1 className="text-sm font-bold text-slate-800 truncate flex-1">
-                  {t("navPlacesTop")}
+                  {t("thingsToDo")}
                 </h1>
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Filter Toggle Button */}
@@ -258,7 +258,7 @@ export default function PlacesPage() {
               {/* Row 1: Title + View Toggle (centered) */}
               <div className="flex items-center justify-center gap-4 mb-3">
                 <h1 className="text-lg sm:text-xl font-bold text-slate-800">
-                  {t("navPlacesTop")}
+                  {t("thingsToDo")}
                 </h1>
                 <div className="flex bg-slate-100 rounded-lg p-1 shrink-0">
                   <button
@@ -368,7 +368,7 @@ export default function PlacesPage() {
 
               {/* Results Count */}
               <div className="mt-2 text-xs text-slate-500">
-                {results.length} {locale === "en" ? "trips found" : "ทริป"}
+                {results.length} {locale === "en" ? "activities found" : "กิจกรรม"}
               </div>
             </div>
           </div>
@@ -411,12 +411,12 @@ export default function PlacesPage() {
                           {locale === "en" ? selectedLocation.locationNameEn : selectedLocation.locationName}
                         </h2>
                         <p className="text-xs text-slate-500">
-                          {selectedLocation.tripCount} {locale === "en" ? "trips available" : "ทริปที่มี"}
+                          {selectedLocation.tripCount} {locale === "en" ? "activities available" : "กิจกรรมที่มี"}
                         </p>
                       </div>
                     </div>
                     
-                    {/* Trips List */}
+                    {/* Activities List */}
                     <div className="space-y-2">
                       {selectedLocation.trips.map((activity) => (
                         <MapActivityCard
@@ -442,8 +442,8 @@ export default function PlacesPage() {
                     </h3>
                     <p className="text-sm text-slate-500 max-w-[200px]">
                       {locale === "en" 
-                        ? "Click on a marker on the map to see available trips at that location"
-                        : "คลิกที่มุดบนแผนที่เพื่อดูทริปที่มีในสถานที่นั้น"}
+                        ? "Click on a marker on the map to see available activities at that location"
+                        : "คลิกที่มุดบนแผนที่เพื่อดูกิจกรรมที่มีในสถานที่นั้น"}
                     </p>
                     
                     {/* Location Summary */}
@@ -493,7 +493,7 @@ export default function PlacesPage() {
                         {locale === "en" ? selectedLocation.locationNameEn : selectedLocation.locationName}
                       </h2>
                       <p className="text-sm text-slate-500">
-                        {selectedLocation.tripCount} {locale === "en" ? "trips available" : "ทริปที่มี"}
+                        {selectedLocation.tripCount} {locale === "en" ? "activities available" : "กิจกรรมที่มี"}
                       </p>
                     </div>
                     <button
