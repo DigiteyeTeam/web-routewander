@@ -6,6 +6,9 @@ export default function SearchPage({ searchParams }: any) {
   
   const guideTypeParam = searchParams?.guideType ?? "";
   const guideType = Array.isArray(guideTypeParam) ? guideTypeParam[0] : guideTypeParam;
+
+  const viewParam = searchParams?.view ?? "";
+  const view = Array.isArray(viewParam) ? viewParam[0] : viewParam;
   
-  return <SearchPageClient initialQuery={q || ""} initialGuideType={guideType || ""} />;
+  return <SearchPageClient initialQuery={q || ""} initialGuideType={guideType || ""} initialView={view || "list"} />;
 }

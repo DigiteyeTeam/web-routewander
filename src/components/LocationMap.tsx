@@ -146,6 +146,10 @@ export default function LocationMap({
 
       marker.on("click", () => {
         onLocationClick(location);
+        // Close popup on mobile to show bottom sheet
+        if (window.innerWidth < 768) {
+          setTimeout(() => marker.closePopup(), 100);
+        }
       });
 
       markersRef.current.set(location.locationKey, marker);
@@ -195,6 +199,15 @@ export default function LocationMap({
         .location-marker {
           background: transparent !important;
           border: none !important;
+        }
+        .leaflet-pane,
+        .leaflet-control,
+        .leaflet-top,
+        .leaflet-bottom {
+          z-index: 1 !important;
+        }
+        .leaflet-popup-pane {
+          z-index: 2 !important;
         }
       `}</style>
       <div ref={mapRef} className="w-full h-full" />

@@ -46,8 +46,8 @@ export default function Hero() {
     <section className="relative min-h-[480px] flex items-start md:items-center justify-center pt-24 pb-16 px-4 sm:px-5 md:px-6 lg:px-8">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1528181304800-259b08848526?w=1920&q=80"
-          alt="Thailand - Grand Palace Bangkok"
+          src="https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=1920&q=80"
+          alt="Thailand - Beautiful Beach"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/55" />

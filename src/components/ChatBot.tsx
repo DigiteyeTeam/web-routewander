@@ -1,26 +1,64 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { useTranslation } from "@/context/LocaleContext";
+
+type SuggestedItem = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  reason: string;
+};
+
+type ChatResponse = {
+  reply: string;
+  suggested_items: SuggestedItem[];
+  ui_action: {
+    type: "none" | "show_detail";
+    targetId?: string;
+  };
+  follow_up_questions: string[];
+};
 
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
-};
-
-const INITIAL_MESSAGE: Message = {
-  id: "welcome",
-  role: "assistant",
-  content: "สวัสดีครับ! 👋 ผมคือน้องแวนเดอร์ ผู้ช่วยของ Route Wander ยินดีช่วยแนะนำทริปท่องเที่ยวในไทยครับ มีอะไรให้ช่วยไหมครับ?",
+  suggestedItems?: SuggestedItem[];
+  followUpQuestions?: string[];
 };
 
 export default function ChatBot() {
+  const router = useRouter();
+  const { locale } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasNewMessage, setHasNewMessage] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const INITIAL_MESSAGE: Message = {
+    id: "welcome",
+    role: "assistant",
+    content: locale === "en" 
+      ? "Hello! 👋 I'm Wander, your Route Wander assistant. I can help you find the perfect trip in Thailand. What are you looking for?"
+      : "สวัสดีครับ! 👋 ผมคือน้องแวนเดอร์ ผู้ช่วยของ Route Wander ยินดีช่วยแนะนำทริปท่องเที่ยวในไทยครับ มีอะไรให้ช่วยไหมครับ?",
+    followUpQuestions: locale === "en"
+      ? ["Show me popular trips", "Budget-friendly options", "What are local guides?"]
+      : ["แนะนำทริปยอดนิยม", "ทริปงบประหยัด", "ไกด์ท้องถิ่นคืออะไร"],
+  };
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([INITIAL_MESSAGE]);
+    }
+  }, [locale]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,16 +71,18 @@ export default function ChatBot() {
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
+      setHasNewMessage(false);
     }
   }, [isOpen]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (text?: string) => {
+    const messageText = text || input.trim();
+    if (!messageText || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
+      content: messageText,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -58,6 +98,7 @@ export default function ChatBot() {
             role: m.role,
             content: m.content,
           })),
+          locale,
         }),
       });
 
@@ -65,12 +106,19 @@ export default function ChatBot() {
         throw new Error("Failed to send message");
       }
 
-      const data = await response.json();
+      const data: ChatResponse = await response.json();
+
+      // Handle UI action
+      if (data.ui_action?.type === "show_detail" && data.ui_action.targetId) {
+        router.push(`/activity/${data.ui_action.targetId}`);
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.message || "ขออภัยครับ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+        content: data.reply || (locale === "en" ? "Sorry, something went wrong. Please try again." : "ขออภัยครับ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"),
+        suggestedItems: data.suggested_items,
+        followUpQuestions: data.follow_up_questions,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -79,7 +127,9 @@ export default function ChatBot() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "ขออภัยครับ ไม่สามารถเชื่อมต่อได้ในขณะนี้ กรุณาลองใหม่อีกครั้งนะครับ 🙏",
+        content: locale === "en" 
+          ? "Sorry, I can't connect right now. Please try again. 🙏"
+          : "ขออภัยครับ ไม่สามารถเชื่อมต่อได้ในขณะนี้ กรุณาลองใหม่อีกครั้งนะครับ 🙏",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -98,11 +148,15 @@ export default function ChatBot() {
     setMessages([INITIAL_MESSAGE]);
   };
 
+  const quickSuggestions = locale === "en"
+    ? ["Popular trips", "Budget ฿1,500", "Local guides"]
+    : ["ทริปยอดนิยม", "งบ ฿1,500", "ไกด์ท้องถิ่น"];
+
   return (
     <>
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[380px] h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-slate-200 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-slate-200 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-indigo-600 px-4 py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
@@ -112,15 +166,19 @@ export default function ChatBot() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">น้องแวนเดอร์</h3>
-                <p className="text-white/80 text-xs">ผู้ช่วย Route Wander</p>
+                <h3 className="text-white font-semibold text-sm">
+                  {locale === "en" ? "Wander" : "น้องแวนเดอร์"}
+                </h3>
+                <p className="text-white/80 text-xs">
+                  {locale === "en" ? "Route Wander Assistant" : "ผู้ช่วย Route Wander"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={clearChat}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                title="ล้างแชท"
+                title={locale === "en" ? "Clear chat" : "ล้างแชท"}
               >
                 <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -140,21 +198,74 @@ export default function ChatBot() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] px-4 py-2.5 rounded-2xl ${
-                    message.role === "user"
-                      ? "bg-primary text-white rounded-br-md"
-                      : "bg-white text-slate-700 shadow-sm border border-slate-100 rounded-bl-md"
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              <div key={message.id}>
+                <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] px-4 py-2.5 rounded-2xl ${
+                      message.role === "user"
+                        ? "bg-primary text-white rounded-br-md"
+                        : "bg-white text-slate-700 shadow-sm border border-slate-100 rounded-bl-md"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  </div>
                 </div>
+
+                {/* Suggested Items Cards */}
+                {message.suggestedItems && message.suggestedItems.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {message.suggestedItems.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={`/activity/${item.id}`}
+                        className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 hover:border-primary/50 hover:shadow-md transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate group-hover:text-primary transition-colors">
+                            {item.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                              {item.category}
+                            </span>
+                            <span className="text-xs text-slate-500">{item.reason}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-primary">฿{item.price.toLocaleString()}</p>
+                          <svg className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Follow-up Questions */}
+                {message.followUpQuestions && message.followUpQuestions.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {message.followUpQuestions.map((question, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => sendMessage(question)}
+                        disabled={isLoading}
+                        className="px-3 py-1.5 text-xs bg-white text-slate-600 rounded-full border border-slate-200 hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+            
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-white text-slate-700 px-4 py-3 rounded-2xl rounded-bl-md shadow-sm border border-slate-100">
@@ -171,13 +282,10 @@ export default function ChatBot() {
 
           {/* Quick Actions */}
           <div className="px-3 py-2 bg-white border-t border-slate-100 flex gap-2 overflow-x-auto shrink-0">
-            {["แนะนำทริปยอดนิยม", "ทริปงบ 1,000", "ไกด์ท้องถิ่น"].map((text) => (
+            {quickSuggestions.map((text) => (
               <button
                 key={text}
-                onClick={() => {
-                  setInput(text);
-                  setTimeout(() => sendMessage(), 100);
-                }}
+                onClick={() => sendMessage(text)}
                 disabled={isLoading}
                 className="shrink-0 px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 transition-colors disabled:opacity-50"
               >
@@ -195,12 +303,12 @@ export default function ChatBot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="พิมพ์ข้อความ..."
+                placeholder={locale === "en" ? "Type a message..." : "พิมพ์ข้อความ..."}
                 disabled={isLoading}
                 className="flex-1 px-4 py-2.5 bg-slate-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
               />
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={!input.trim() || isLoading}
                 className="p-2.5 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -233,7 +341,7 @@ export default function ChatBot() {
         )}
         
         {/* Notification dot */}
-        {!isOpen && (
+        {!isOpen && hasNewMessage && (
           <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
             <span className="text-[10px] text-white font-bold">1</span>
           </span>

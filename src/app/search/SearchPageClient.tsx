@@ -36,16 +36,19 @@ type LocationGroup = {
 type SearchPageClientProps = {
   initialQuery: string;
   initialGuideType?: string;
+  initialView?: string;
 };
 
-export default function SearchPageClient({ initialQuery, initialGuideType }: SearchPageClientProps) {
+export default function SearchPageClient({ initialQuery, initialGuideType, initialView }: SearchPageClientProps) {
   const q = initialQuery;
   const { t, locale } = useTranslation();
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView === "map" ? "map" : "list");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [guideTypeFilter, setGuideTypeFilter] = useState(initialGuideType || "all");
   const [selectedLocation, setSelectedLocation] = useState<LocationGroup | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState(true);
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
 
   const allResults = useMemo(() => {
     if (q) {
@@ -136,129 +139,258 @@ export default function SearchPageClient({ initialQuery, initialGuideType }: Sea
     <>
       <Header />
       <main className="pt-16 min-h-screen bg-slate-50">
-        {/* Sticky Filter Bar */}
-        <div className="sticky top-16 z-30 bg-white border-b border-slate-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            {/* Row 1: Title + View Toggle (centered) */}
-            <div className="flex items-center justify-center gap-4 mb-3">
-              <h1 className="text-lg sm:text-xl font-bold text-slate-800">
-                {guideTypeFilter === "general" 
-                  ? (locale === "en" ? "General Guide Trips" : "ทริปไกด์ทั่วไป")
-                  : guideTypeFilter === "local"
-                  ? (locale === "en" ? "Local Guide Trips" : "ทริปไกด์ท้องถิ่น")
-                  : q 
-                  ? `${t("searchResults")} "${q}"`
-                  : (locale === "en" ? "All Trips" : "ทริปทั้งหมด")}
-              </h1>
-              <div className="flex bg-slate-100 rounded-lg p-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    viewMode === "list"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                  </svg>
-                  <span className="hidden sm:inline">{locale === "en" ? "List" : "รายการ"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("map")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    viewMode === "map"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
-                  <span className="hidden sm:inline">{locale === "en" ? "Map" : "แผนที่"}</span>
-                </button>
+        {/* Sticky Filter Bar - Compact on mobile for map view */}
+        <div className={`sticky top-16 z-30 bg-white border-b border-slate-200 shadow-sm ${viewMode === "map" ? "md:block" : ""}`}>
+          <div className="max-w-7xl mx-auto px-4 py-2 md:py-3">
+            {/* Mobile: Compact row (map view only) */}
+            {viewMode === "map" && (
+              <div className="flex items-center justify-between gap-2 md:hidden">
+                <h1 className="text-sm font-bold text-slate-800 truncate flex-1">
+                  {q ? `"${q}"` : (locale === "en" ? "Search" : "ค้นหา")}
+                </h1>
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Filter Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      showFilters || guideTypeFilter !== "all" || selectedFilter !== "all" || selectedDestination !== "all"
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    {results.length}
+                  </button>
+                  {/* View Toggle */}
+                  <div className="flex bg-slate-100 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      className={`p-1.5 rounded-md transition-all ${
+                        viewMode === "list" ? "bg-white shadow-sm" : ""
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("map")}
+                      className={`p-1.5 rounded-md transition-all ${
+                        viewMode === "map" ? "bg-white shadow-sm" : ""
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Row 2: Guide Type Filter + Destination Dropdown */}
-            <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
-              <span className="text-xs text-slate-500 shrink-0">{locale === "en" ? "Guide:" : "ไกด์:"}</span>
-              <button
-                type="button"
-                onClick={() => setGuideTypeFilter("all")}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  guideTypeFilter === "all"
-                    ? "bg-slate-800 text-white"
-                    : "bg-white text-slate-700 border border-slate-200 hover:border-slate-400"
-                }`}
-              >
-                {locale === "en" ? "All" : "ทั้งหมด"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setGuideTypeFilter("general")}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  guideTypeFilter === "general"
-                    ? "bg-orange-500 text-white"
-                    : "bg-white text-slate-700 border border-slate-200 hover:border-orange-400"
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${guideTypeFilter === "general" ? "bg-white" : "bg-orange-500"}`} />
-                {t("generalGuide")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setGuideTypeFilter("local")}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  guideTypeFilter === "local"
-                    ? "bg-green-500 text-white"
-                    : "bg-white text-slate-700 border border-slate-200 hover:border-green-400"
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${guideTypeFilter === "local" ? "bg-white" : "bg-green-500"}`} />
-                {t("localGuide")}
-              </button>
-              
-              {/* Destination Dropdown */}
-              <span className="text-slate-300 mx-1">|</span>
-              <select
-                value={selectedDestination}
-                onChange={(e) => setSelectedDestination(e.target.value)}
-                className="shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/50"
-              >
-                <option value="all">{locale === "en" ? "All Destinations" : "ทุกจังหวัด"}</option>
-                {DESTINATION_COORDINATES.map((dest) => (
-                  <option key={dest.slug} value={dest.slug}>
-                    {locale === "en" ? dest.nameEn : dest.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Mobile: Expandable Filters (map view only) */}
+            {viewMode === "map" && showFilters && (
+              <div className="md:hidden mt-2 pt-2 border-t border-slate-100 space-y-2">
+                {/* Guide Type */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  <span className="text-xs text-slate-500 shrink-0">{locale === "en" ? "Guide:" : "ไกด์:"}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGuideTypeFilter("all")}
+                    className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      guideTypeFilter === "all"
+                        ? "bg-slate-800 text-white"
+                        : "bg-white text-slate-700 border border-slate-200"
+                    }`}
+                  >
+                    {locale === "en" ? "All" : "ทั้งหมด"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGuideTypeFilter("general")}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      guideTypeFilter === "general"
+                        ? "bg-orange-500 text-white"
+                        : "bg-white text-slate-700 border border-slate-200"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${guideTypeFilter === "general" ? "bg-white" : "bg-orange-500"}`} />
+                    {t("generalGuide")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGuideTypeFilter("local")}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      guideTypeFilter === "local"
+                        ? "bg-green-500 text-white"
+                        : "bg-white text-slate-700 border border-slate-200"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${guideTypeFilter === "local" ? "bg-white" : "bg-green-500"}`} />
+                    {t("localGuide")}
+                  </button>
+                  <select
+                    value={selectedDestination}
+                    onChange={(e) => setSelectedDestination(e.target.value)}
+                    className="shrink-0 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
+                  >
+                    <option value="all">{locale === "en" ? "All" : "ทุกจังหวัด"}</option>
+                    {DESTINATION_COORDINATES.map((dest) => (
+                      <option key={dest.slug} value={dest.slug}>
+                        {locale === "en" ? dest.nameEn : dest.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* Categories */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  <span className="text-xs text-slate-500 shrink-0">{locale === "en" ? "Cat:" : "หมวด:"}</span>
+                  {FILTER_CATEGORIES.map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setSelectedFilter(f.key)}
+                      className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                        selectedFilter === f.key
+                          ? "bg-primary text-white"
+                          : "bg-white text-slate-700 border border-slate-200"
+                      }`}
+                    >
+                      {t(filterKeyToTKey[f.key] ?? "filterAll")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            {/* Row 3: Category Filter */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <span className="text-xs text-slate-500 shrink-0">{locale === "en" ? "Category:" : "หมวด:"}</span>
-              {FILTER_CATEGORIES.map((f) => (
+            {/* Desktop & List View: Full filter bar */}
+            <div className={`${viewMode === "map" ? "hidden md:block" : ""}`}>
+              {/* Row 1: Title + View Toggle (centered) */}
+              <div className="flex items-center justify-center gap-4 mb-3">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-800">
+                  {guideTypeFilter === "general" 
+                    ? (locale === "en" ? "General Guide Trips" : "ทริปไกด์ทั่วไป")
+                    : guideTypeFilter === "local"
+                    ? (locale === "en" ? "Local Guide Trips" : "ทริปไกด์ท้องถิ่น")
+                    : q 
+                    ? `${t("searchResults")} "${q}"`
+                    : (locale === "en" ? "All Trips" : "ทริปทั้งหมด")}
+                </h1>
+                <div className="flex bg-slate-100 rounded-lg p-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      viewMode === "list"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    <span className="hidden sm:inline">{locale === "en" ? "List" : "รายการ"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("map")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      viewMode === "map"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    <span className="hidden sm:inline">{locale === "en" ? "Map" : "แผนที่"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 2: Guide Type Filter + Destination Dropdown */}
+              <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+                <span className="text-xs text-slate-500 shrink-0">{locale === "en" ? "Guide:" : "ไกด์:"}</span>
                 <button
-                  key={f.key}
                   type="button"
-                  onClick={() => setSelectedFilter(f.key)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    selectedFilter === f.key
-                      ? "bg-primary text-white"
-                      : "bg-white text-slate-700 border border-slate-200 hover:border-primary hover:text-primary"
+                  onClick={() => setGuideTypeFilter("all")}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    guideTypeFilter === "all"
+                      ? "bg-slate-800 text-white"
+                      : "bg-white text-slate-700 border border-slate-200 hover:border-slate-400"
                   }`}
                 >
-                  {t(filterKeyToTKey[f.key] ?? "filterAll")}
+                  {locale === "en" ? "All" : "ทั้งหมด"}
                 </button>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setGuideTypeFilter("general")}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    guideTypeFilter === "general"
+                      ? "bg-orange-500 text-white"
+                      : "bg-white text-slate-700 border border-slate-200 hover:border-orange-400"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${guideTypeFilter === "general" ? "bg-white" : "bg-orange-500"}`} />
+                  {t("generalGuide")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGuideTypeFilter("local")}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    guideTypeFilter === "local"
+                      ? "bg-green-500 text-white"
+                      : "bg-white text-slate-700 border border-slate-200 hover:border-green-400"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${guideTypeFilter === "local" ? "bg-white" : "bg-green-500"}`} />
+                  {t("localGuide")}
+                </button>
+                
+                {/* Destination Dropdown */}
+                <span className="text-slate-300 mx-1">|</span>
+                <select
+                  value={selectedDestination}
+                  onChange={(e) => setSelectedDestination(e.target.value)}
+                  className="shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="all">{locale === "en" ? "All Destinations" : "ทุกจังหวัด"}</option>
+                  {DESTINATION_COORDINATES.map((dest) => (
+                    <option key={dest.slug} value={dest.slug}>
+                      {locale === "en" ? dest.nameEn : dest.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Results Count */}
-            <div className="mt-2 text-xs text-slate-500">
-              {results.length} {locale === "en" ? "trips found" : "ทริป"}
+              {/* Row 3: Category Filter */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <span className="text-xs text-slate-500 shrink-0">{locale === "en" ? "Category:" : "หมวด:"}</span>
+                {FILTER_CATEGORIES.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setSelectedFilter(f.key)}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                      selectedFilter === f.key
+                        ? "bg-primary text-white"
+                        : "bg-white text-slate-700 border border-slate-200 hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {t(filterKeyToTKey[f.key] ?? "filterAll")}
+                  </button>
+                ))}
+              </div>
+
+              {/* Results Count */}
+              <div className="mt-2 text-xs text-slate-500">
+                {results.length} {locale === "en" ? "trips found" : "ทริป"}
+              </div>
             </div>
           </div>
         </div>
@@ -266,9 +398,24 @@ export default function SearchPageClient({ initialQuery, initialGuideType }: Sea
         {/* Main Content */}
         {viewMode === "map" ? (
           /* Map View */
-          <div className="flex flex-col md:flex-row h-[calc(100vh-14rem)]">
-            {/* Side Panel - Trips at Selected Location (Left) */}
-            <div className="w-full md:w-[380px] lg:w-[420px] h-[40vh] md:h-full bg-white border-r border-slate-200 overflow-y-auto order-2 md:order-1">
+          <div className="relative h-[calc(100vh-7rem)] md:h-[calc(100vh-14rem)]">
+            {/* Map Container - Full width */}
+            <div className="absolute inset-0 z-0">
+              <LocationMapComponent
+                locations={locationGroups}
+                center={mapCenter}
+                zoom={mapZoom}
+                onLocationClick={(loc) => {
+                  handleLocationClick(loc);
+                  setShowMobilePanel(true);
+                }}
+                selectedLocation={selectedLocation}
+                locale={locale}
+              />
+            </div>
+
+            {/* Desktop Side Panel (Left) */}
+            <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[380px] lg:w-[420px] bg-white border-r border-slate-200 overflow-y-auto z-10">
               <div className="p-4">
                 {selectedLocation ? (
                   <>
@@ -349,16 +496,62 @@ export default function SearchPageClient({ initialQuery, initialGuideType }: Sea
               </div>
             </div>
 
-            {/* Map Container (Right) */}
-            <div className="flex-1 h-[60vh] md:h-full relative order-1 md:order-2">
-              <LocationMapComponent
-                locations={locationGroups}
-                center={mapCenter}
-                zoom={mapZoom}
-                onLocationClick={handleLocationClick}
-                selectedLocation={selectedLocation}
-                locale={locale}
-              />
+            {/* Mobile Bottom Sheet - Panel */}
+            <div
+              className={`md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
+                showMobilePanel && selectedLocation ? "translate-y-0" : "translate-y-full"
+              }`}
+              style={{ zIndex: 9999 }}
+              style={{ maxHeight: "70vh" }}
+            >
+              {/* Handle Bar */}
+              <div className="pt-3 pb-2 flex justify-center">
+                <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+              </div>
+
+              {/* Header */}
+              {selectedLocation && (
+                <div className="px-4 pb-3 border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-800">
+                        {locale === "en" ? selectedLocation.locationNameEn : selectedLocation.locationName}
+                      </h2>
+                      <p className="text-sm text-slate-500">
+                        {selectedLocation.tripCount} {locale === "en" ? "trips available" : "ทริปที่มี"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMobilePanel(false);
+                        setSelectedLocation(null);
+                      }}
+                      className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="px-4 py-3 overflow-y-auto" style={{ maxHeight: "calc(70vh - 6rem)" }}>
+                {selectedLocation && (
+                  <div className="space-y-3">
+                    {selectedLocation.trips.map((activity) => (
+                      <MapActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        locale={locale}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (
