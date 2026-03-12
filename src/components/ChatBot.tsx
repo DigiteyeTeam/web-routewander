@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/context/LocaleContext";
+import ivyIcon from "@/images/Ivy8.png";
 
 type SuggestedItem = {
   id: string;
@@ -47,8 +48,8 @@ export default function ChatBot() {
     id: "welcome",
     role: "assistant",
     content: locale === "en" 
-      ? "Hello! 👋 I'm Wander, your Route Wander assistant. I can help you find the perfect trip in Thailand. What are you looking for?"
-      : "สวัสดีครับ! 👋 ผมคือน้องแวนเดอร์ ผู้ช่วยของ Route Wander ยินดีช่วยแนะนำทริปท่องเที่ยวในไทยครับ มีอะไรให้ช่วยไหมครับ?",
+      ? "Hello! 👋 I'm Ivy, your Route Wander travel assistant. I can help you find the perfect trip in Thailand. What are you looking for?"
+      : "สวัสดีค่ะ! 👋 หนูชื่อ Ivy ผู้ช่วยท่องเที่ยวของ Route Wander ค่ะ ยินดีช่วยแนะนำทริปท่องเที่ยวในไทยค่ะ มีอะไรให้ช่วยไหมคะ?",
     followUpQuestions: locale === "en"
       ? ["Show me popular trips", "Budget-friendly options", "What are local guides?"]
       : ["แนะนำทริปยอดนิยม", "ทริปงบประหยัด", "ไกด์ท้องถิ่นคืออะไร"],
@@ -160,17 +161,24 @@ export default function ChatBot() {
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-indigo-600 px-4 py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 shrink-0">
+                <Image
+                  src={ivyIcon}
+                  alt="Ivy"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover object-top scale-150"
+                />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">
-                  {locale === "en" ? "Wander" : "น้องแวนเดอร์"}
+                <h3 className="text-white font-semibold text-sm flex items-center gap-1">
+                  Ivy
+                  <svg className="w-3 h-3 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
                 </h3>
                 <p className="text-white/80 text-xs">
-                  {locale === "en" ? "Route Wander Assistant" : "ผู้ช่วย Route Wander"}
+                  {locale === "en" ? "Travel Assistant" : "ผู้ช่วยท่องเที่ยว"}
                 </p>
               </div>
             </div>
@@ -321,13 +329,13 @@ export default function ChatBot() {
         </div>
       )}
 
-      {/* Floating Button */}
+      {/* Floating Button - Ivy Mascot */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
+        className={`fixed bottom-6 right-4 sm:right-6 z-50 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
           isOpen
-            ? "bg-slate-600 hover:bg-slate-700 rotate-0"
-            : "bg-gradient-to-r from-primary to-indigo-600 hover:shadow-xl hover:scale-105"
+            ? "w-12 h-12 bg-slate-600 hover:bg-slate-700"
+            : "w-16 h-16 md:w-[94px] md:h-[94px] hover:shadow-xl hover:scale-105"
         }`}
       >
         {isOpen ? (
@@ -335,14 +343,18 @@ export default function ChatBot() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+          <Image
+            src={ivyIcon}
+            alt="Chat with Ivy"
+            width={72}
+            height={72}
+            className="w-full h-full rounded-full object-cover"
+          />
         )}
         
         {/* Notification dot */}
         {!isOpen && hasNewMessage && (
-          <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
             <span className="text-[10px] text-white font-bold">1</span>
           </span>
         )}
