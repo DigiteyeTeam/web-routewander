@@ -15,7 +15,7 @@ import {
   type ItineraryStep,
 } from "@/data/activities";
 import { useTranslation } from "@/context/LocaleContext";
-import { featureKeyToTKey } from "@/i18n/translations";
+import { featureKeyToTKey, type TranslationKey } from "@/i18n/translations";
 
 const MOCK_GUIDE_ID = "1";
 const MAX_OPEN_TRIPS = 3;
@@ -138,7 +138,7 @@ function buildTripPayload(
     option2Title: string;
     option2Meeting: string;
   },
-  t: (key: string) => string
+  t: (key: TranslationKey) => string
 ): Omit<ActivityDetail, "id"> {
   const hours = form.durationHours ? parseInt(form.durationHours, 10) : 0;
   const duration = hours ? `${hours} ชั่วโมง` : "";
