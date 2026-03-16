@@ -65,8 +65,8 @@ function LoginForm() {
                 </p>
                 <p className="text-amber-700">
                   {locale === "en"
-                    ? "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local (see .env.example), then restart the dev server (npm run dev)."
-                    : "กรุณาตั้งค่า GOOGLE_CLIENT_ID และ GOOGLE_CLIENT_SECRET ในไฟล์ .env.local (ดูจาก .env.example) จากนั้น restart dev server (npm run dev)"}
+                    ? "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local, then restart the dev server (npm run dev)."
+                    : "กรุณาตั้งค่า GOOGLE_CLIENT_ID และ GOOGLE_CLIENT_SECRET ในไฟล์ .env.local จากนั้น restart dev server (npm run dev)"}
                 </p>
               </div>
             )}
