@@ -270,7 +270,7 @@ export default function SearchPageClient({ initialQuery, initialGuideType, initi
               <div className="flex items-center justify-center gap-4 mb-3">
                 <h1 className="text-lg sm:text-xl font-bold text-slate-800">
                   {guideTypeFilter === "general" 
-                    ? (locale === "en" ? "General Guide Trips" : "ทริปไกด์ทั่วไป")
+                    ? t("generalGuideTripsTitle")
                     : guideTypeFilter === "local"
                     ? (locale === "en" ? "Local Guide Trips" : "ทริปไกด์ท้องถิ่น")
                     : q 

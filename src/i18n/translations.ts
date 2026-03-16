@@ -68,6 +68,12 @@ export const translations = {
     loginOrRegister: "เข้าสู่ระบบหรือลงทะเบียน",
     signInWithGoogle: "เข้าสู่ระบบด้วย Google",
     loginTitle: "เข้าสู่ระบบหรือลงทะเบียน",
+    loginSubtitle: "เลือกประเภทการเข้าสู่ระบบ",
+    signInGoogleAsTraveler: "เข้าสู่ระบบด้วย Google (นักท่องเที่ยว)",
+    signInGoogleAsTravelerDesc: "ค้นหาและจองทัวร์",
+    signInGoogleAsGuide: "เข้าสู่ระบบด้วย Google (ไกด์)",
+    signInGoogleAsGuideDesc: "สมัครหรือเข้าสู่ระบบเป็นไกด์นำเที่ยว",
+    selectTour: "เลือกทัวร์",
     mockUserName: "ผู้ใช้ทดสอบ Google",
     logOut: "ออกจากระบบ",
     updates: "อัปเดต",
@@ -92,7 +98,8 @@ export const translations = {
 
     // Section headings
     activitiesWhereYouGo: "กิจกรรมน่าทำในทุกที่ที่คุณไป",
-    memorableExperiences: "ประสบการณ์เดินทางที่น่าจดจำ",
+    memorableExperiences: "เดินเที่ยวกับไกด์ท้องถิ่น",
+    generalGuideTripsTitle: "เดินเที่ยวกับไกด์ทั่วไป",
 
     // Destination
     explore: "สำรวจ",
@@ -315,6 +322,12 @@ export const translations = {
     loginOrRegister: "Log in or Register",
     signInWithGoogle: "Sign in with Google",
     loginTitle: "Log in or Register",
+    loginSubtitle: "Choose how you want to sign in",
+    signInGoogleAsTraveler: "Sign in with Google (Traveler)",
+    signInGoogleAsTravelerDesc: "Find and book tours",
+    signInGoogleAsGuide: "Sign in with Google (Guide)",
+    signInGoogleAsGuideDesc: "Register or sign in as a tour guide",
+    selectTour: "Select tour",
     mockUserName: "Google Test User",
     logOut: "Log out",
     updates: "Updates",
@@ -336,7 +349,8 @@ export const translations = {
     footerTagline: "Tours in Thailand for international travelers. Route Wander — local Thai guides.",
 
     activitiesWhereYouGo: "Things to do wherever you go",
-    memorableExperiences: "Memorable experiences",
+    memorableExperiences: "Walk with local guides",
+    generalGuideTripsTitle: "Walk with general guides",
 
     explore: "Explore",
     resultsCount: "results",

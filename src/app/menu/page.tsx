@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { useTranslation } from "@/context/LocaleContext";
 import { useMockAuth } from "@/context/MockAuthContext";
 
 export default function MenuPage() {
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
-  const { user: mockUser, signOut } = useMockAuth();
+  const { data: session, status } = useSession();
+  const { user: mockUser, signOut: signOutMock } = useMockAuth();
+  const isAuthenticated = status === "authenticated" && session?.user;
+  const displayUser = isAuthenticated
+    ? { name: session!.user!.name ?? session!.user!.email ?? "", email: session!.user!.email ?? "" }
+    : (mockUser ? { name: t("mockUserName"), email: mockUser.email } : null);
 
   return (
     <main className="min-h-screen bg-white text-slate-800">
@@ -208,7 +214,7 @@ export default function MenuPage() {
           </div>
 
           {/* Login/Register or User + Logout */}
-          {mockUser ? (
+          {displayUser ? (
             <>
               <div className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-slate-50/50">
                 <div className="flex items-center gap-2">
@@ -218,15 +224,16 @@ export default function MenuPage() {
                     </svg>
                   </span>
                   <div className="min-w-0">
-                    <p className="font-medium text-sm text-slate-800 truncate">{t("mockUserName")}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{mockUser.email}</p>
+                    <p className="font-medium text-sm text-slate-800 truncate">{displayUser.name}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{displayUser.email}</p>
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  signOut();
+                  if (isAuthenticated) nextAuthSignOut({ callbackUrl: "/" });
+                  else signOutMock();
                   router.back();
                 }}
                 className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-left"

@@ -132,7 +132,7 @@ export default function SectionExperiences() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1">
-                {locale === "en" ? "General Guide Trips" : "ทริปไกด์ทั่วไป"}
+                {t("generalGuideTripsTitle")}
               </h2>
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-1.5">

@@ -20,10 +20,21 @@ type ExploreMapProps = {
   locale: string;
 };
 
-const createCustomIcon = (guideType: string | undefined, isSelected: boolean) => {
-  const color = guideType === "local" ? "#22c55e" : guideType === "general" ? "#f97316" : "#6366f1";
+const LOCAL_COLOR = "#22c55e";
+const GENERAL_COLOR = "#f97316";
+const DEFAULT_COLOR = "#6366f1";
+
+/** สีมาร์กเกอร์ตามกติกา: มีแต่ไกด์ทั่วไป→ส้ม, มีแต่ท้องถิ่น→เขียว, มีทั้งคู่→ใช้สีของรายการแรกในกลุ่ม */
+function getMarkerColorForGroup(activities: ActivityWithLocation[]): string {
+  if (activities.length === 0) return DEFAULT_COLOR;
+  const types = new Set(activities.map((a) => a.guideType).filter(Boolean));
+  if (types.size === 0) return DEFAULT_COLOR;
+  if (types.size === 2) return activities[0].guideType === "local" ? LOCAL_COLOR : GENERAL_COLOR;
+  return types.has("local") ? LOCAL_COLOR : GENERAL_COLOR;
+}
+
+const createCustomIcon = (color: string, isSelected: boolean) => {
   const size = isSelected ? 40 : 32;
-  
   return L.divIcon({
     className: "custom-marker",
     html: `
@@ -38,7 +49,7 @@ const createCustomIcon = (guideType: string | undefined, isSelected: boolean) =>
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
-        ${isSelected ? 'transform: scale(1.2);' : ''}
+        ${isSelected ? "transform: scale(1.2);" : ""}
       ">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -100,28 +111,43 @@ export default function ExploreMap({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    activities.forEach((activity) => {
-      if (!activity.coordinates) return;
+    const withCoords = activities.filter((a): a is ActivityWithLocation => Boolean(a.coordinates));
+    const key = (lat: number, lng: number) => `${Math.round(lat * 1e5)}_${Math.round(lng * 1e5)}`;
+    const groups = new Map<string, ActivityWithLocation[]>();
+    withCoords.forEach((a) => {
+      const k = key(a.coordinates!.lat, a.coordinates!.lng);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k)!.push(a);
+    });
 
-      const isSelected = selectedActivity?.id === activity.id;
-      const icon = createCustomIcon(activity.guideType, isSelected);
+    groups.forEach((groupActivities, coordKey) => {
+      const first = groupActivities[0];
+      const [lat, lng] = [first.coordinates!.lat, first.coordinates!.lng];
+      const markerColor = getMarkerColorForGroup(groupActivities);
+      const isSelected = groupActivities.some((a) => selectedActivity?.id === a.id);
+      const icon = createCustomIcon(markerColor, isSelected);
 
-      const marker = L.marker([activity.coordinates.lat, activity.coordinates.lng], { icon })
-        .addTo(mapInstanceRef.current!);
+      const marker = L.marker([lat, lng], { icon }).addTo(mapInstanceRef.current!);
 
+      const activity = first;
       const title = locale === "en" ? activity.titleEn || activity.title : activity.title;
       const duration = locale === "en" ? activity.durationEn || activity.duration : activity.duration;
-      const guideLabel = activity.guideType === "local" 
-        ? (locale === "en" ? "Local Guide" : "ไกด์ท้องถิ่น")
-        : (locale === "en" ? "General Guide" : "ไกด์ทั่วไป");
-      const guideColor = activity.guideType === "local" ? "#22c55e" : "#f97316";
+      const guideLabel =
+        activity.guideType === "local"
+          ? locale === "en"
+            ? "Local Guide"
+            : "ไกด์ท้องถิ่น"
+          : locale === "en"
+            ? "General Guide"
+            : "ไกด์ทั่วไป";
+      const guideColor = activity.guideType === "local" ? LOCAL_COLOR : GENERAL_COLOR;
 
       const popupContent = `
         <div style="width: 220px; padding: 4px;">
           <img src="${activity.image}" alt="" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" />
           <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
             <span style="background: ${guideColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">${guideLabel}</span>
-            ${activity.tripCode ? `<span style="background: #1e293b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace;">${activity.tripCode}</span>` : ''}
+            ${activity.tripCode ? `<span style="background: #1e293b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace;">${activity.tripCode}</span>` : ""}
           </div>
           <h3 style="font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0; line-height: 1.3;">${title}</h3>
           <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; margin-bottom: 8px;">
@@ -140,15 +166,8 @@ export default function ExploreMap({
         </div>
       `;
 
-      marker.bindPopup(popupContent, {
-        maxWidth: 250,
-        className: "custom-popup",
-      });
-
-      marker.on("click", () => {
-        onMarkerClick(activity);
-      });
-
+      marker.bindPopup(popupContent, { maxWidth: 250, className: "custom-popup" });
+      marker.on("click", () => onMarkerClick(activity));
       markersRef.current.push(marker);
     });
   }, [activities, selectedActivity, isMapReady, locale, onMarkerClick]);

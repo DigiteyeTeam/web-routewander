@@ -6,6 +6,10 @@ import "leaflet/dist/leaflet.css";
 import type { LocationGroup } from "@/app/destination/[slug]/page";
 import type { Coordinates } from "@/data/locations";
 
+const LOCAL_COLOR = "#22c55e";
+const GENERAL_COLOR = "#f97316";
+const DEFAULT_COLOR = "#6366f1";
+
 type LocationMapProps = {
   locations: LocationGroup[];
   center: Coordinates;
@@ -15,17 +19,26 @@ type LocationMapProps = {
   locale: string;
 };
 
-const createLocationIcon = (tripCount: number, isSelected: boolean) => {
+/** สีมาร์กเกอร์: มีแต่ไกด์ทั่วไป→ส้ม, มีแต่ท้องถิ่น→เขียว, มีทั้งคู่→สีของทริปแรก */
+function getMarkerColorForLocation(location: LocationGroup): string {
+  const trips = location.trips ?? [];
+  if (trips.length === 0) return DEFAULT_COLOR;
+  const types = new Set(trips.map((t) => t.guideType).filter(Boolean));
+  if (types.size === 0) return DEFAULT_COLOR;
+  if (types.size === 2) return trips[0].guideType === "local" ? LOCAL_COLOR : GENERAL_COLOR;
+  return types.has("local") ? LOCAL_COLOR : GENERAL_COLOR;
+}
+
+const createLocationIcon = (color: string, tripCount: number, isSelected: boolean) => {
   const size = isSelected ? 48 : 40;
   const hasMultiple = tripCount > 1;
-  
   return L.divIcon({
     className: "location-marker",
     html: `
       <div style="
         width: ${size}px;
         height: ${size}px;
-        background: ${isSelected ? '#6366f1' : '#3b82f6'};
+        background: ${color};
         border: 3px solid white;
         border-radius: 50%;
         box-shadow: 0 3px 10px rgba(0,0,0,0.3);
@@ -34,10 +47,10 @@ const createLocationIcon = (tripCount: number, isSelected: boolean) => {
         justify-content: center;
         transition: all 0.2s;
         cursor: pointer;
-        ${isSelected ? 'transform: scale(1.1);' : ''}
+        ${isSelected ? "transform: scale(1.1);" : ""}
       ">
         ${hasMultiple ? `
-          <span style="color: white; font-size: ${isSelected ? '14px' : '12px'}; font-weight: 700;">${tripCount}</span>
+          <span style="color: white; font-size: ${isSelected ? "14px" : "12px"}; font-weight: 700;">${tripCount}</span>
         ` : `
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -94,6 +107,21 @@ export default function LocationMap({
     mapInstanceRef.current.setView([center.lat, center.lng], zoom, { animate: true });
   }, [center, zoom]);
 
+  // เมื่อรายการ locations เปลี่ยน (เช่น เลือกหมวด ร้านอาหาร) ให้ซูมแผนที่ไปครอบมาร์กเกอร์ที่แสดง
+  useEffect(() => {
+    if (!mapInstanceRef.current || !isMapReady || locations.length === 0) return;
+    const map = mapInstanceRef.current;
+    if (locations.length === 1) {
+      const { lat, lng } = locations[0].coordinates;
+      map.setView([lat, lng], 14, { animate: true });
+    } else {
+      const bounds = L.latLngBounds(
+        locations.map((l) => [l.coordinates.lat, l.coordinates.lng] as [number, number])
+      );
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+    }
+  }, [locations, isMapReady]);
+
   useEffect(() => {
     if (!mapInstanceRef.current || !isMapReady) return;
 
@@ -102,7 +130,8 @@ export default function LocationMap({
 
     locations.forEach((location) => {
       const isSelected = selectedLocation?.locationKey === location.locationKey;
-      const icon = createLocationIcon(location.tripCount, isSelected);
+      const markerColor = getMarkerColorForLocation(location);
+      const icon = createLocationIcon(markerColor, location.tripCount, isSelected);
 
       const marker = L.marker([location.coordinates.lat, location.coordinates.lng], { icon })
         .addTo(mapInstanceRef.current!);

@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { getGuideByUserId } from "@/lib/guides-store";
+import { getNextAuthToken, getGuideApiBaseUrl, useExternalGuideApi } from "@/lib/api-proxy";
+
+export async function GET() {
+  if (useExternalGuideApi()) {
+    const token = await getNextAuthToken();
+    if (!token) {
+      return NextResponse.json(
+        { error: "กรุณาล็อกอินก่อนลงทะเบียนไกด์" },
+        { status: 401 }
+      );
+    }
+    const base = getGuideApiBaseUrl();
+    try {
+      const res = await fetch(`${base}/api/guides/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      return NextResponse.json(data, { status: res.status });
+    } catch (err) {
+      return NextResponse.json(
+        { error: "ไม่สามารถเชื่อมต่อ Server ได้ กรุณาลองใหม่" },
+        { status: 502 }
+      );
+    }
+  }
+
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "กรุณาล็อกอินก่อนลงทะเบียนไกด์" },
+      { status: 401 }
+    );
+  }
+
+  const uid = session.user.id;
+  const guide = getGuideByUserId(uid);
+
+  if (!guide) {
+    return NextResponse.json({
+      registered: false,
+      user: {
+        id: session.user.id,
+        name: session.user.name ?? null,
+        email: session.user.email ?? null,
+        image: session.user.image ?? null,
+      },
+    });
+  }
+
+  return NextResponse.json({
+    ...guide,
+    registered: true,
+    status: guide.status,
+  });
+}

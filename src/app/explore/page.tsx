@@ -37,6 +37,7 @@ function ExplorePageContent() {
   const { t, locale } = useTranslation();
   const searchParams = useSearchParams();
   const viewParam = searchParams.get("view");
+  const guideIdParam = searchParams.get("guideId");
   const [viewMode, setViewMode] = useState<ViewMode>(viewParam === "list" ? "list" : "map");
   const [selectedDestination, setSelectedDestination] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -49,6 +50,10 @@ function ExplorePageContent() {
 
   const filteredActivities = useMemo(() => {
     let filtered = allActivities;
+
+    if (guideIdParam) {
+      filtered = filtered.filter((a) => a.guideId === guideIdParam);
+    }
 
     if (guideTypeFilter !== "all") {
       filtered = filtered.filter((a) => a.guideType === guideTypeFilter);
@@ -67,7 +72,7 @@ function ExplorePageContent() {
     }
 
     return filtered;
-  }, [allActivities, guideTypeFilter, selectedDestination, selectedCategory]);
+  }, [allActivities, guideIdParam, guideTypeFilter, selectedDestination, selectedCategory]);
 
   const activitiesWithLocations = useMemo(() => {
     return filteredActivities.map((activity) => {
@@ -129,10 +134,28 @@ function ExplorePageContent() {
     return THAILAND_ZOOM;
   }, [selectedDestination]);
 
+  const guideFromParam = guideIdParam ? getGuideById(guideIdParam) : null;
+
   return (
     <>
       <Header />
       <main className="pt-16 min-h-screen bg-slate-50">
+        {guideIdParam && guideFromParam && (
+          <div className="bg-primary/10 border-b border-primary/20">
+            <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
+              <span className="text-sm text-slate-700">
+                {locale === "en" ? "Tours by " : "ทัวร์โดย "}
+                <span className="font-semibold">{t(guideFromParam.nameKey)}</span>
+              </span>
+              <Link
+                href="/explore"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                {locale === "en" ? "Show all tours" : "แสดงทัวร์ทั้งหมด"}
+              </Link>
+            </div>
+          </div>
+        )}
         {/* Sticky Filter Bar - Compact on mobile for map view */}
         <div className={`sticky top-16 z-30 bg-white border-b border-slate-200 shadow-sm ${viewMode === "map" ? "md:block" : ""}`}>
           <div className="max-w-7xl mx-auto px-4 py-2 md:py-3">
@@ -140,7 +163,9 @@ function ExplorePageContent() {
             {viewMode === "map" && (
               <div className="flex items-center justify-between gap-2 md:hidden">
                 <h1 className="text-base font-bold text-slate-800 truncate">
-                  {guideTypeFilter === "general" 
+                  {guideIdParam && guideFromParam
+                    ? t(guideFromParam.nameKey)
+                    : guideTypeFilter === "general" 
                     ? (locale === "en" ? "General Guide" : "ไกด์ทั่วไป")
                     : guideTypeFilter === "local"
                     ? (locale === "en" ? "Local Guide" : "ไกด์ท้องถิ่น")
@@ -152,7 +177,7 @@ function ExplorePageContent() {
                     type="button"
                     onClick={() => setShowFilters(!showFilters)}
                     className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      showFilters || guideTypeFilter !== "all" || selectedCategory !== "all" || selectedDestination !== "all"
+                      showFilters || guideIdParam || guideTypeFilter !== "all" || selectedCategory !== "all" || selectedDestination !== "all"
                         ? "bg-primary text-white"
                         : "bg-slate-100 text-slate-700"
                     }`}
@@ -267,8 +292,10 @@ function ExplorePageContent() {
               {/* Row 1: Title + View Toggle (centered) */}
               <div className="flex items-center justify-center gap-4 mb-3">
                 <h1 className="text-lg sm:text-xl font-bold text-slate-800">
-                  {guideTypeFilter === "general" 
-                    ? (locale === "en" ? "General Guide Trips" : "ทริปไกด์ทั่วไป")
+                  {guideIdParam && guideFromParam
+                    ? (locale === "en" ? `Tours by ${t(guideFromParam.nameKey)}` : `ทัวร์โดย ${t(guideFromParam.nameKey)}`)
+                    : guideTypeFilter === "general" 
+                    ? t("generalGuideTripsTitle")
                     : guideTypeFilter === "local"
                     ? (locale === "en" ? "Local Guide Trips" : "ทริปไกด์ท้องถิ่น")
                     : (locale === "en" ? "Explore Trips" : "สำรวจทริป")}

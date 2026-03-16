@@ -1,16 +1,16 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
 import { useTranslation } from "@/context/LocaleContext";
+import { useCart } from "@/context/CartContext";
 import { getGuideById } from "@/data/guides";
-import { getActivitiesByDestination, type ActivityItem } from "@/data/activities";
-import { slugToCityKey } from "@/i18n/translations";
-import { useMemo } from "react";
+import { getAllActivities, getActivityById } from "@/data/activities";
 
 const mockReviews = [
   { id: 1, author: "Sarah M.", rating: 5, date: "2026-02-15", text: "Amazing tour! Somchai knew all the best spots and hidden gems.", textTh: "ทัวร์ดีมาก! ไกด์รู้จักสถานที่ดีๆ และที่ซ่อนเร้นทั้งหมด" },
@@ -26,14 +26,28 @@ export default function GuideProfilePage() {
 
   const guideTours = useMemo(() => {
     if (!guide) return [];
-    const citySlug = Object.entries(slugToCityKey).find(
-      ([, key]) => key === guide.locationKey
-    )?.[0];
-    if (!citySlug) return [];
-    return getActivitiesByDestination(citySlug)
-      .filter((a) => a.guideType === guide.guideType)
+    return getAllActivities()
+      .filter((a) => a.guideId === guide.id)
       .slice(0, 4);
   }, [guide]);
+
+  const [selectedTourId, setSelectedTourId] = useState<string>("");
+  const [travelers, setTravelers] = useState(1);
+  const [date, setDate] = useState("");
+  const [language, setLanguage] = useState("ไทย / อังกฤษ");
+  const { addItem } = useCart();
+  const router = useRouter();
+
+  const selectedTourIdResolved = useMemo(() => {
+    if (guideTours.length === 0) return "";
+    const valid = selectedTourId && guideTours.some((t) => t.id === selectedTourId);
+    return valid ? selectedTourId : (guideTours[0]?.id ?? "");
+  }, [guideTours, selectedTourId]);
+  const activityDetail = useMemo(
+    () => (selectedTourIdResolved ? getActivityById(selectedTourIdResolved) : null),
+    [selectedTourIdResolved]
+  );
+  const canGoToCart = date.trim() !== "" && activityDetail;
 
   if (!guide) {
     return (
@@ -221,22 +235,126 @@ export default function GuideProfilePage() {
               </section>
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar - วิดเจ็ตจองทัวร์ (ตามรูป) */}
             <div className="space-y-6">
-              {/* Contact card */}
-              <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
+              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm sticky top-24">
                 <h3 className="font-bold text-slate-800 mb-4">
                   {locale === "en" ? "Book with this guide" : "จองกับไกด์คนนี้"}
                 </h3>
-                <Link
-                  href={`/destination/${Object.entries(slugToCityKey).find(([, k]) => k === guide.locationKey)?.[0] || "bangkok"}?guideType=${guide.guideType}`}
-                  className="block w-full py-3 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-center transition-colors"
-                >
-                  {locale === "en" ? "View Tours" : "ดูทัวร์"}
-                </Link>
-                <p className="text-xs text-slate-500 text-center mt-3">
-                  {locale === "en" ? "Response time: within 24 hours" : "เวลาตอบกลับ: ภายใน 24 ชั่วโมง"}
-                </p>
+                {guideTours.length === 0 ? (
+                  <>
+                    <Link
+                      href={`/explore?guideId=${guide.id}`}
+                      className="block w-full py-3 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-center transition-colors"
+                    >
+                      {locale === "en" ? "View Tours" : "ดูทัวร์"}
+                    </Link>
+                    <p className="text-xs text-slate-500 text-center mt-3">
+                      {locale === "en" ? "Response time: within 24 hours" : "เวลาตอบกลับ: ภายใน 24 ชั่วโมง"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    {guideTours.length > 1 && (
+                      <label className="block mb-3">
+                        <span className="text-xs text-slate-500">{t("selectTour")}</span>
+                        <select
+                          value={selectedTourIdResolved}
+                          onChange={(e) => setSelectedTourId(e.target.value)}
+                          className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
+                        >
+                          {guideTours.map((tour) => (
+                            <option key={tour.id} value={tour.id}>
+                              {locale === "en" && tour.titleEn ? tour.titleEn : tour.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {activityDetail && (
+                      <>
+                        <p className="text-2xl font-bold text-slate-800 mb-6">
+                          {t("from")} <strong>{activityDetail.priceFrom.toLocaleString()} THB</strong>{" "}
+                          <span className="text-base font-normal text-slate-500">{t("perPerson")}</span>
+                        </p>
+                        <div className="space-y-3 mb-6">
+                          <label className="block">
+                            <span className="text-xs text-slate-500">{t("travelersLabel")}</span>
+                            <select
+                              value={travelers}
+                              onChange={(e) => setTravelers(Number(e.target.value))}
+                              className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
+                            >
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                                <option key={n} value={n}>{n} x {t("travelerUnit")}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="block">
+                            <span className="text-xs text-slate-500">{t("dateLabel")}</span>
+                            <input
+                              type="date"
+                              value={date}
+                              onChange={(e) => setDate(e.target.value)}
+                              min={new Date().toISOString().slice(0, 10)}
+                              className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="text-xs text-slate-500">{t("languageLabel")}</span>
+                            <select
+                              value={language}
+                              onChange={(e) => setLanguage(e.target.value)}
+                              className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
+                            >
+                              <option value="ไทย / อังกฤษ">{t("guideLangThaiAndEnglish")}</option>
+                              <option value="ไทย">{t("guideLangThai")}</option>
+                              <option value="อังกฤษ">{t("guideLangEnglish")}</option>
+                            </select>
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!canGoToCart || !activityDetail) return;
+                            const opt = activityDetail.options?.[0];
+                            const price = opt?.pricePerGroup ? opt.price : (opt?.price ?? activityDetail.priceFrom) * travelers;
+                            addItem({
+                              activityId: activityDetail.id,
+                              activityTitle: activityDetail.title,
+                              activityImage: activityDetail.image,
+                              optionIndex: 0,
+                              optionTitle: opt?.title ?? activityDetail.title,
+                              travelers,
+                              date,
+                              language,
+                              price,
+                              pricePerGroup: opt?.pricePerGroup,
+                            });
+                            router.push("/cart");
+                          }}
+                          disabled={!canGoToCart}
+                          className="w-full py-3 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold"
+                        >
+                          {t("goToCart")}
+                        </button>
+                        {!canGoToCart && (
+                          <p className="text-xs text-slate-500 mt-2 text-center">{t("pleaseSelectDate")}</p>
+                        )}
+                        <div className="mt-6 space-y-3 text-sm">
+                          <div className="flex gap-2">
+                            <span className="text-green-600 shrink-0">✓</span>
+                            <p className="text-slate-600">{t("cancelFree24h")}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-green-600 shrink-0">✓</span>
+                            <p className="text-slate-600">{t("bookNowPayLater")}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

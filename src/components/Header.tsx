@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import logo from "@/images/apple-touch-icon.png";
 import { useTranslation } from "@/context/LocaleContext";
 import { useMockAuth } from "@/context/MockAuthContext";
@@ -72,7 +73,12 @@ export default function Header() {
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
-  const { user: mockUser, signOut } = useMockAuth();
+  const { data: session, status } = useSession();
+  const { user: mockUser, signOut: signOutMock } = useMockAuth();
+  const isAuthenticated = status === "authenticated" && session?.user;
+  const displayUser = isAuthenticated
+    ? { name: session!.user!.name ?? session!.user!.email ?? "", email: session!.user!.email ?? "", image: session!.user!.image ?? null }
+    : (mockUser ? { name: t("mockUserName"), email: mockUser.email, image: mockUser.image } : null);
   const closeDropdowns = () => {
     setPlacesOpen(false);
     setThingsOpen(false);
@@ -421,16 +427,17 @@ export default function Header() {
                   <p className="px-4 py-2 text-sm font-bold text-slate-800 border-b border-slate-100">
                     {t("profile")}
                   </p>
-                  {mockUser ? (
+                  {displayUser ? (
                     <>
                       <div className="px-4 py-2.5 text-sm text-slate-600 border-b border-slate-100">
-                        <p className="font-medium text-slate-800">{t("mockUserName")}</p>
-                        <p className="text-xs text-slate-500 truncate">{mockUser.email}</p>
+                        <p className="font-medium text-slate-800 truncate">{displayUser.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{displayUser.email}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => {
-                          signOut();
+                          if (isAuthenticated) nextAuthSignOut({ callbackUrl: "/" });
+                          else signOutMock();
                           closeDropdowns();
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
