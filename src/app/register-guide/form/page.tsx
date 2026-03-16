@@ -94,7 +94,7 @@ export default function RegisterGuideFormPage() {
       setSubmitError("กรุณาเลือกจังหวัดที่ให้บริการ");
       return;
     }
-    const displayName = name.trim() || session?.user?.name ?? "";
+    const displayName = (name.trim() || session?.user?.name) ?? "";
     if (!displayName) {
       setSubmitError("กรุณากรอกชื่อที่แสดงต่อนักท่องเที่ยว");
       return;
