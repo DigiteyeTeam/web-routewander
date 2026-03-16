@@ -24,7 +24,7 @@ function loadClosedIds(): Set<string> {
 
 function saveClosedIds(ids: Set<string>) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids)));
   } catch {}
 }
 
