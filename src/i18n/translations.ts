@@ -130,6 +130,7 @@ export const translations = {
     travelers: "คน",
     total: "รวมทั้งสิ้น",
     creditDebitCard: "บัตรเครดิต / บัตรเดบิต",
+    email: "อีเมล",
 
     // Updates / Bookings (notifications)
     updatesTitle: "การจองของฉัน",
@@ -378,6 +379,7 @@ export const translations = {
     travelers: "travelers",
     total: "Total",
     creditDebitCard: "Credit / debit card",
+    email: "Email",
 
     updatesTitle: "My bookings",
     viewMyBookings: "View my bookings",

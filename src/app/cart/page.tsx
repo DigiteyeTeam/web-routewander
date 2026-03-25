@@ -130,7 +130,7 @@ export default function CartPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
                 {status === "unauthenticated" && (
                   <div className="space-y-2 mb-6">
-                    <h2 className="text-lg font-bold text-slate-800">{t("email") ?? "Email"}</h2>
+                    <h2 className="text-lg font-bold text-slate-800">{t("email")}</h2>
                     <label className="block text-sm text-slate-600">
                       อีเมลสำหรับส่งข้อมูลการจอง (สำหรับทดสอบกรอกอะไรก็ได้ที่เป็นรูปแบบอีเมล)
                     </label>

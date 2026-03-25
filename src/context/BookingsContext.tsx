@@ -91,7 +91,7 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
               paidAt: String(b.paidAt ?? new Date().toISOString()),
               meetingPlace: String(b.meetingPlace ?? ""),
             }))
-            .filter((b) => b.id && b.ticketCode && b.activityId);
+            .filter((b: Booking) => Boolean(b.id && b.ticketCode && b.activityId));
 
           if (!cancelled) setBookings(mapped);
           if (!cancelled) setHydrated(true);

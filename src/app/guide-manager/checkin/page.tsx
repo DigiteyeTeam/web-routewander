@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/context/LocaleContext";
@@ -26,7 +26,7 @@ type ToastState = {
   message: string;
 } | null;
 
-export default function GuideTripCheckinPage() {
+function GuideTripCheckinPageInner() {
   const { locale } = useTranslation();
   const sp = useSearchParams();
   const tripId = sp.get("tripId") ?? "";
@@ -608,3 +608,16 @@ export default function GuideTripCheckinPage() {
   );
 }
 
+export default function GuideTripCheckinPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[40vh] flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" aria-hidden />
+        </div>
+      }
+    >
+      <GuideTripCheckinPageInner />
+    </Suspense>
+  );
+}
