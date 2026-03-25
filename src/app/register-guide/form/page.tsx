@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { THAILAND_PROVINCES } from "@/data/thailand-provinces";
 
 const STEPS = [
   { key: "personal", label: "Personal", labelTh: "ข้อมูลส่วนตัว" },
@@ -26,20 +27,12 @@ const GUIDE_TYPE_OPTIONS: { value: GuideType; label: string }[] = [
   { value: "local", label: "ไกด์ท้องถิ่น (Local)" },
 ];
 
-const LOCATION_OPTIONS: { value: string; label: string }[] = [
-  { value: "bangkok", label: "กรุงเทพฯ" },
-  { value: "chiang-mai", label: "เชียงใหม่" },
-  { value: "phuket", label: "ภูเก็ต" },
-  { value: "krabi", label: "กระบี่" },
-  { value: "pattaya", label: "พัทยา" },
-  { value: "samut-songkhram", label: "สมุทรสงคราม" },
-];
-
 export default function RegisterGuideFormPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [phone, setPhone] = useState("");
   const [locationSlug, setLocationSlug] = useState("");
   const [guideType, setGuideType] = useState<GuideType>("general");
@@ -47,6 +40,8 @@ export default function RegisterGuideFormPage() {
   const [bank, setBank] = useState(BANKS[0]);
   const [accountNumber, setAccountNumber] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
+  const [idCardFrontFile, setIdCardFrontFile] = useState<File | null>(null);
+  const [bankBookFile, setBankBookFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -99,6 +94,7 @@ export default function RegisterGuideFormPage() {
       setSubmitError("กรุณากรอกชื่อที่แสดงต่อนักท่องเที่ยว");
       return;
     }
+    const displayNameEn = nameEn.trim();
 
     setSubmitting(true);
     setSubmitError("");
@@ -110,6 +106,7 @@ export default function RegisterGuideFormPage() {
         body: JSON.stringify({
           locationSlug,
           name: displayName,
+          nameEn: displayNameEn || undefined,
           phone: phone.trim() || undefined,
           guideType,
           nationalId: nationalId.trim() || undefined,
@@ -267,6 +264,17 @@ export default function RegisterGuideFormPage() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-slate-700">ชื่อไกด์ (ภาษาอังกฤษ)</label>
+                    <input
+                      type="text"
+                      value={nameEn}
+                      onChange={(e) => setNameEn(e.target.value)}
+                      placeholder="Guide name in English"
+                      className="rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/30 focus:border-primary h-12 px-4 text-sm"
+                    />
+                    <p className="text-xs text-slate-500">ใช้แสดงผลเมื่อภาษาเป็นอังกฤษ</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-slate-700">เบอร์โทรติดต่อ</label>
                     <input
                       type="tel"
@@ -284,9 +292,9 @@ export default function RegisterGuideFormPage() {
                       className="rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/30 focus:border-primary h-12 px-4 text-sm"
                     >
                       <option value="">เลือกจังหวัด</option>
-                      {LOCATION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {THAILAND_PROVINCES.map((p) => (
+                        <option key={p.slug} value={p.slug}>
+                          {p.nameTh}
                         </option>
                       ))}
                     </select>
@@ -334,13 +342,41 @@ export default function RegisterGuideFormPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-slate-700">บัตรประชาชน (ด้านหน้า)</label>
-                    <div className="border-2 border-dashed border-slate-200 hover:border-primary/50 bg-slate-50 rounded-xl p-8 transition-colors cursor-pointer text-center group">
+                    <input
+                      id="id-card-front-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) {
+                          setIdCardFrontFile(null);
+                          return;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          setSubmitError("ไฟล์ใหญ่เกิน 5MB กรุณาเลือกไฟล์ที่เล็กกว่า");
+                          setIdCardFrontFile(null);
+                          return;
+                        }
+                        setSubmitError("");
+                        setIdCardFrontFile(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById("id-card-front-input")?.click()}
+                      className="border-2 border-dashed border-slate-200 hover:border-primary/50 bg-slate-50 rounded-xl p-8 transition-colors cursor-pointer text-center group"
+                    >
                       <svg className="w-10 h-10 mx-auto text-slate-400 group-hover:text-primary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      <p className="text-xs font-medium text-slate-600">ลากวางหรือ <span className="text-primary">เลือกไฟล์</span></p>
+                      <p className="text-xs font-medium text-slate-600">
+                        {idCardFrontFile
+                          ? `เลือกแล้ว: ${idCardFrontFile.name}`
+                          : <>ลากวางหรือ <span className="text-primary">เลือกไฟล์</span></>}
+                      </p>
                       <p className="text-[10px] text-slate-400 mt-1">JPG, PNG ไม่เกิน 5MB</p>
-                    </div>
+                    </button>
                   </div>
                 </div>
               )}
@@ -392,16 +428,42 @@ export default function RegisterGuideFormPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-slate-700">รูปสมุดบัญชี (หน้าชื่อและเลขบัญชี)</label>
-                    <div className="border-2 border-dashed border-slate-200 hover:border-primary/50 bg-slate-50 rounded-xl p-10 transition-colors cursor-pointer flex flex-col items-center group">
+                    <input
+                      id="bank-book-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) {
+                          setBankBookFile(null);
+                          return;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          setSubmitError("ไฟล์สมุดบัญชีใหญ่เกิน 5MB กรุณาเลือกไฟล์ที่เล็กกว่า");
+                          setBankBookFile(null);
+                          return;
+                        }
+                        setSubmitError("");
+                        setBankBookFile(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById("bank-book-input")?.click()}
+                      className="border-2 border-dashed border-slate-200 hover:border-primary/50 bg-slate-50 rounded-xl p-10 transition-colors cursor-pointer flex flex-col items-center group"
+                    >
                       <svg className="w-10 h-10 text-slate-400 group-hover:text-primary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      <p className="text-sm font-medium text-slate-600">อัปโหลดรูปหน้าสมุดบัญชี</p>
-                      <p className="text-xs text-slate-400 mt-1">ต้องเห็นเลขบัญชีและชื่อชัดเจน</p>
-                      <button type="button" className="mt-4 px-6 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors">
+                      <p className="text-sm font-medium text-slate-600">
+                        {bankBookFile ? `เลือกแล้ว: ${bankBookFile.name}` : "อัปโหลดรูปหน้าสมุดบัญชี"}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">ต้องเห็นเลขบัญชีและชื่อชัดเจน (JPG, PNG ไม่เกิน 5MB)</p>
+                      <span className="mt-4 px-6 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold group-hover:bg-slate-100 transition-colors">
                         เลือกไฟล์
-                      </button>
-                    </div>
+                      </span>
+                    </button>
                   </div>
                 </div>
               )}

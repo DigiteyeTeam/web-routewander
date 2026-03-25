@@ -4,12 +4,10 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useState,
 } from "react";
 import { translations, type Locale, type TranslationKey } from "@/i18n/translations";
 
-const STORAGE_KEY = "route-wander-locale";
+const FORCED_LOCALE: Locale = "en";
 
 type LocaleContextValue = {
   locale: Locale;
@@ -19,58 +17,18 @@ type LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-function getStoredLocale(): Locale {
-  if (typeof window === "undefined") return "th";
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "th" || stored === "en") return stored;
-  } catch {
-    // ignore
-  }
-  return "th";
-}
-
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored === "th" || stored === "en") return stored;
-      } catch {
-        /* ignore */
-      }
-    }
-    return "th";
-  });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setLocaleState(getStoredLocale());
-    setMounted(true);
+  // Temporarily force English across all pages.
+  const locale: Locale = FORCED_LOCALE;
+  const setLocale = useCallback((_next: Locale) => {
+    // Language switch is intentionally disabled for now.
   }, []);
-
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore
-    }
-    if (typeof document !== "undefined") {
-      document.documentElement.lang = next === "th" ? "th" : "en";
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    document.documentElement.lang = locale === "th" ? "th" : "en";
-  }, [locale, mounted]);
 
   const t = useCallback(
     (key: TranslationKey): string => {
-      return translations[locale][key] ?? translations.th[key] ?? key;
+      return translations[FORCED_LOCALE][key] ?? key;
     },
-    [locale]
+    []
   );
 
   return (

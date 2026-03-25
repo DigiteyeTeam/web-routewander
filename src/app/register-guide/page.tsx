@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -10,6 +11,15 @@ const CALLBACK_URL = "/register-guide/form";
 
 export default function RegisterGuidePage() {
   const [loading, setLoading] = useState(false);
+  const { status } = useSession();
+  const router = useRouter();
+
+  // ถ้าล็อกอินอยู่แล้ว เข้าหน้านี้ให้เด้งไปฟอร์มทันที ไม่ต้องกด Google ซ้ำ
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(CALLBACK_URL);
+    }
+  }, [status, router]);
 
   const handleGoogleSignIn = () => {
     setLoading(true);
@@ -21,6 +31,11 @@ export default function RegisterGuidePage() {
     <>
       <Header />
       <main className="pt-24 pb-20 min-h-screen bg-[#fcfbf9]">
+        {status === "authenticated" && (
+          <div className="max-w-lg mx-auto px-6 py-16 text-center text-slate-500">
+            กำลังนำคุณไปหน้ากรอกข้อมูลไกด์...
+          </div>
+        )}
         <div className="max-w-lg mx-auto px-6 py-16">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-8 md:p-12 text-center">

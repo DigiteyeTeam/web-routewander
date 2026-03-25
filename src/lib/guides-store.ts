@@ -2,10 +2,13 @@
  * โปรไฟล์ไกด์ตามสเปก API (GuideResponse)
  * ใช้ UID จาก session (Google sub) เป็น id ของ guide
  */
+import { THAILAND_PROVINCES } from "@/data/thailand-provinces";
+
 export type GuideProfile = {
   id: string;
   userId: string;
   name: string;
+  nameEn?: string | null;
   guideType: "general" | "local";
   location: string;
   locationSlug: string;
@@ -31,14 +34,10 @@ export type GuideProfile = {
   createdAt: string;
 };
 
-const LOCATION_SLUGS = ["bangkok", "chiang-mai", "phuket", "krabi", "pattaya", "samut-songkhram"] as const;
+const LOCATION_SLUGS = [...THAILAND_PROVINCES.map((p) => p.slug), "pattaya"];
 const LOCATION_LABELS: Record<string, string> = {
-  bangkok: "กรุงเทพ",
-  "chiang-mai": "เชียงใหม่",
-  phuket: "ภูเก็ต",
-  krabi: "กระบี่",
-  pattaya: "พัทยา",
-  "samut-songkhram": "สมุทรสงคราม",
+  ...Object.fromEntries(THAILAND_PROVINCES.map((p) => [p.slug, p.nameTh])),
+  pattaya: "พัทยา (ชลบุรี)",
 };
 
 /** เก็บตาม userId (UID จาก Google) — เปลี่ยนเป็น DB (Prisma) ในภายหลัง */
@@ -60,6 +59,7 @@ export function createGuide(
   userId: string,
   input: {
     name: string;
+    nameEn?: string | null;
     guideType: "general" | "local";
     locationSlug: string;
     image?: string | null;
@@ -85,6 +85,7 @@ export function createGuide(
     id,
     userId,
     name: input.name.trim() || "ไกด์",
+    nameEn: input.nameEn ?? null,
     guideType: input.guideType,
     location,
     locationSlug: input.locationSlug,

@@ -1,7 +1,10 @@
 "use client";
 
 /** สร้างแถบบาร์โค้ดจำลองจากข้อความ (แต่ละตัวอักษรแปลงเป็นความกว้างแถบ) */
-export default function MockBarcode({ code, className }: { code: string; className?: string }) {
+export default function MockBarcode({ code, className }: { code?: string; className?: string }) {
+  if (!code) {
+    return null;
+  }
   const barWidth = 2;
   const gap = 1;
   const height = 48;

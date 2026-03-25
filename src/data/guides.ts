@@ -18,6 +18,17 @@ export type Guide = {
   bioEn: string;
   verified: boolean;
   licenseNumber: string;
+  headerImageUrl?: string | null;
+  reviews?: GuideReview[];
+};
+
+export type GuideReview = {
+  id: number;
+  author: string;
+  rating: number;
+  date: string;
+  text: string;
+  textTh: string;
 };
 
 export const guides: Guide[] = [
@@ -37,6 +48,7 @@ export const guides: Guide[] = [
     bioEn: "Hello! I'm Somchai, a local guide born and raised in Bangkok with over 8 years of experience. I love sharing Thai history and culture with travelers. I'll take you to places locals love, not just typical tourist spots.",
     verified: true,
     licenseNumber: "SC01",
+    headerImageUrl: null,
   },
   {
     id: "2",
@@ -54,6 +66,7 @@ export const guides: Guide[] = [
     bioEn: "Hi! I'm Supaporn, a guide passionate about cooking and street food. I'll introduce you to authentic Thai flavors you'll never forget. Join me for a Thai cooking experience!",
     verified: true,
     licenseNumber: "SP02",
+    headerImageUrl: null,
   },
   {
     id: "3",
@@ -71,6 +84,7 @@ export const guides: Guide[] = [
     bioEn: "Hello! I'm Wichai, a Chiang Mai native. I know every trail in the mountains here. I'll take you to experience real nature and hill tribe life, plus learn ethical elephant care.",
     verified: true,
     licenseNumber: "WC03",
+    headerImageUrl: null,
   },
   {
     id: "4",
@@ -88,6 +102,7 @@ export const guides: Guide[] = [
     bioEn: "Hi! I'm Naree, a guide who loves the sea and water activities. I'll take you snorkeling to see the most beautiful corals and marine life in the Andaman.",
     verified: true,
     licenseNumber: "NR04",
+    headerImageUrl: null,
   },
   {
     id: "5",
@@ -105,6 +120,7 @@ export const guides: Guide[] = [
     bioEn: "Hello! I'm Apichai, a true Krabi local. I know every island and the best snorkeling spots. I'll take you to secret islands tourists rarely know about.",
     verified: true,
     licenseNumber: "AC05",
+    headerImageUrl: null,
   },
   {
     id: "6",
@@ -122,6 +138,7 @@ export const guides: Guide[] = [
     bioEn: "Hi! I'm Malee, a guide who loves nature and Northern Thai cuisine. I'll take you to explore the mountains and learn authentic Northern Thai cooking.",
     verified: true,
     licenseNumber: "ML06",
+    headerImageUrl: null,
   },
   {
     id: "7",
@@ -139,6 +156,7 @@ export const guides: Guide[] = [
     bioEn: "Hello! I'm Thanakorn, a Pattaya local who loves the sea and water sports. I'll take you diving, fishing, and experience the fishermen's lifestyle.",
     verified: true,
     licenseNumber: "TK07",
+    headerImageUrl: null,
   },
   {
     id: "8",
@@ -156,6 +174,7 @@ export const guides: Guide[] = [
     bioEn: "Hi! I'm Pim, a guide passionate about Thai history and art. I'll take you to visit fascinating temples and museums in Bangkok.",
     verified: true,
     licenseNumber: "PM08",
+    headerImageUrl: null,
   },
   {
     id: "9",
@@ -173,6 +192,7 @@ export const guides: Guide[] = [
     bioEn: "Hello! I'm Poom, a true Phuket local. I know every beach and secret diving spot. I'll take you to experience the beauty of the Andaman Sea.",
     verified: true,
     licenseNumber: "PO09",
+    headerImageUrl: null,
   },
   {
     id: "10",
@@ -190,6 +210,7 @@ export const guides: Guide[] = [
     bioEn: "Hi! I'm Praewa, a guide who loves the riverside lifestyle. I'll take you to experience floating markets and traditional life in Samut Songkhram.",
     verified: true,
     licenseNumber: "PW10",
+    headerImageUrl: null,
   },
 ];
 

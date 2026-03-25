@@ -2,19 +2,46 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { useTranslation } from "@/context/LocaleContext";
 import { useMockAuth } from "@/context/MockAuthContext";
+import { useNavCatalog } from "@/hooks/useNavCatalog";
 
 export default function MenuPage() {
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
+  const { places, things, topGuides } = useNavCatalog(locale);
+  const [placesOpen, setPlacesOpen] = useState(true);
+  const [thingsOpen, setThingsOpen] = useState(false);
+  const [guidesOpen, setGuidesOpen] = useState(false);
   const { data: session, status } = useSession();
   const { user: mockUser, signOut: signOutMock } = useMockAuth();
+  const [isGuideRegistered, setIsGuideRegistered] = useState(false);
   const isAuthenticated = status === "authenticated" && session?.user;
   const displayUser = isAuthenticated
     ? { name: session!.user!.name ?? session!.user!.email ?? "", email: session!.user!.email ?? "" }
     : (mockUser ? { name: t("mockUserName"), email: mockUser.email } : null);
+
+  useEffect(() => {
+    if (!displayUser) {
+      setIsGuideRegistered(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/guides/me", { credentials: "include" });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled) setIsGuideRegistered(res.ok && data?.registered === true);
+      } catch {
+        if (!cancelled) setIsGuideRegistered(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [displayUser?.email]);
 
   return (
     <main className="min-h-screen bg-white text-slate-800">
@@ -39,8 +66,9 @@ export default function MenuPage() {
         {/* เมนูหลัก */}
         <div className="space-y-1.5">
           {/* Places to see */}
-          <Link
-            href="/places"
+          <button
+            type="button"
+            onClick={() => setPlacesOpen((v) => !v)}
             className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-slate-200 hover:bg-slate-50"
           >
             <span className="flex items-center gap-2">
@@ -52,12 +80,25 @@ export default function MenuPage() {
               </span>
               <span className="font-medium text-sm">{t("placesToSee")}</span>
             </span>
-            <span className="text-slate-400 text-xs">›</span>
-          </Link>
+            <span className="text-slate-400 text-xs">{placesOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {placesOpen && (
+            <div className="ml-2 mt-1 space-y-1 rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+              <Link href="/places" className="block rounded-md px-2 py-1.5 text-xs font-semibold text-primary hover:bg-white">
+                {locale === "en" ? "Browse all destinations" : "ดูปลายทางทั้งหมด"}
+              </Link>
+              {places.slice(0, 5).map((p) => (
+                <Link key={p.slug} href={p.href} className="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-white">
+                  {p.name} ({p.trips})
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Things to do */}
-          <Link
-            href="/activities"
+          <button
+            type="button"
+            onClick={() => setThingsOpen((v) => !v)}
             className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-slate-200 hover:bg-slate-50"
           >
             <span className="flex items-center gap-2">
@@ -68,12 +109,25 @@ export default function MenuPage() {
               </span>
               <span className="font-medium text-sm">{t("thingsToDo")}</span>
             </span>
-            <span className="text-slate-400 text-xs">›</span>
-          </Link>
+            <span className="text-slate-400 text-xs">{thingsOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {thingsOpen && (
+            <div className="ml-2 mt-1 space-y-1 rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+              <Link href="/activities" className="block rounded-md px-2 py-1.5 text-xs font-semibold text-primary hover:bg-white">
+                {locale === "en" ? "Browse all activities" : "ดูกิจกรรมทั้งหมด"}
+              </Link>
+              {things.slice(0, 5).map((a) => (
+                <Link key={a.id} href={a.href} className="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-white truncate">
+                  {a.title}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Guides */}
-          <Link
-            href="/guides"
+          <button
+            type="button"
+            onClick={() => setGuidesOpen((v) => !v)}
             className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-slate-200 hover:bg-slate-50"
           >
             <span className="flex items-center gap-2">
@@ -84,8 +138,20 @@ export default function MenuPage() {
               </span>
               <span className="font-medium text-sm">{t("navGuides")}</span>
             </span>
-            <span className="text-slate-400 text-xs">›</span>
-          </Link>
+            <span className="text-slate-400 text-xs">{guidesOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {guidesOpen && (
+            <div className="ml-2 mt-1 space-y-1 rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+              <Link href="/guides" className="block rounded-md px-2 py-1.5 text-xs font-semibold text-primary hover:bg-white">
+                {locale === "en" ? "Browse all guides" : "ดูไกด์ทั้งหมด"}
+              </Link>
+              {topGuides.slice(0, 5).map((g) => (
+                <Link key={g.id} href={g.href} className="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-white truncate">
+                  {g.name} · {g.location}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Trip / Map */}
           <Link
@@ -213,10 +279,32 @@ export default function MenuPage() {
             </div>
           </div>
 
-          {/* Login/Register or User + Logout */}
+          {/* Login/Register or User + Profile + Logout */}
           {displayUser ? (
             <>
-              <div className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-slate-50/50">
+              {isGuideRegistered ? (
+                <Link
+                  href="/guide-manager"
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-slate-200 hover:bg-slate-50"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="w-6 h-6 inline-flex items-center justify-center rounded-full bg-primary text-white">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+                      </svg>
+                    </span>
+                    <span className="font-medium text-sm">{locale === "en" ? "Guide manager" : "จัดการทริปไกด์"}</span>
+                  </span>
+                  <span className="text-slate-400 text-xs">›</span>
+                </Link>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/profile");
+                }}
+                className="w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-left"
+              >
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 inline-flex items-center justify-center rounded-full bg-primary text-white">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +316,7 @@ export default function MenuPage() {
                     <p className="text-[10px] text-slate-500 truncate">{displayUser.email}</p>
                   </div>
                 </div>
-              </div>
+              </button>
               <button
                 type="button"
                 onClick={() => {

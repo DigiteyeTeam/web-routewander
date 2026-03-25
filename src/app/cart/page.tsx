@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { useBookings } from "@/context/BookingsContext";
 import { useTranslation } from "@/context/LocaleContext";
+import { useSession } from "next-auth/react";
 
 type PaymentMethod = "card" | "cash";
 
@@ -15,29 +16,46 @@ export default function CartPage() {
   const { items, removeItem, clearCart } = useCart();
   const { addBookings } = useBookings();
   const { t } = useTranslation();
+  const { status } = useSession();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [touristEmail, setTouristEmail] = useState("");
 
   const total = items.reduce((sum, i) => sum + i.price, 0);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!paymentMethod) return;
-    addBookings(
-      items.map((item) => ({
-        activityId: item.activityId,
-        activityTitle: item.activityTitle,
-        activityImage: item.activityImage,
-        optionTitle: item.optionTitle,
-        travelers: item.travelers,
-        tripStartDate: item.date,
-        language: item.language,
-        price: item.price,
-        paymentMethod,
-        meetingPlace: t("meetingPlaceDefault"),
-      }))
-    );
-    setConfirmed(true);
-    clearCart();
+    if (status === "unauthenticated") {
+      const e = touristEmail.trim();
+      if (!e || !e.includes("@")) {
+        setConfirmError("กรุณากรอกอีเมลเพื่อรับข้อมูลการจอง");
+        return;
+      }
+    }
+    setConfirmError(null);
+    try {
+      await addBookings(
+        items.map((item) => ({
+          activityId: item.activityId,
+          activityTitle: item.activityTitle,
+          activityImage: item.activityImage,
+          optionTitle: item.optionTitle,
+          travelers: item.travelers,
+          tripStartDate: item.date,
+          language: item.language,
+          price: item.price,
+          paymentMethod,
+          meetingPlace: t("meetingPlaceDefault"),
+          touristEmail: status === "unauthenticated" ? touristEmail.trim() : undefined,
+        }))
+      );
+      setConfirmed(true);
+      clearCart();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to confirm booking";
+      setConfirmError(msg);
+    }
   };
 
   return (
@@ -110,6 +128,21 @@ export default function CartPage() {
               </ul>
 
               <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+                {status === "unauthenticated" && (
+                  <div className="space-y-2 mb-6">
+                    <h2 className="text-lg font-bold text-slate-800">{t("email") ?? "Email"}</h2>
+                    <label className="block text-sm text-slate-600">
+                      อีเมลสำหรับส่งข้อมูลการจอง (สำหรับทดสอบกรอกอะไรก็ได้ที่เป็นรูปแบบอีเมล)
+                    </label>
+                    <input
+                      type="email"
+                      value={touristEmail}
+                      onChange={(e) => setTouristEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
+                    />
+                  </div>
+                )}
                 <h2 className="text-lg font-bold text-slate-800 mb-4">{t("paymentMethod")}</h2>
                 <div className="space-y-4">
                   <label className="flex items-start gap-3 cursor-pointer p-4 rounded-lg border-2 border-slate-200 hover:border-primary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
@@ -156,6 +189,8 @@ export default function CartPage() {
                   {t("confirmBooking")}
                 </button>
               </div>
+
+              {confirmError && <p className="text-sm text-red-600 mt-4">{confirmError}</p>}
             </>
           )}
         </div>

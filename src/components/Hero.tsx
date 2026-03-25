@@ -2,13 +2,15 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { searchActivities, DESTINATION_NAMES } from "@/data/activities";
+import { DESTINATION_NAMES } from "@/data/activities";
 import { useTranslation } from "@/context/LocaleContext";
 import { slugToCityKey } from "@/i18n/translations";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
 
 export default function Hero() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { activities } = usePublicActivities();
   const [q, setQ] = useState("");
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -26,8 +28,25 @@ export default function Hero() {
   }, []);
 
   const suggestions = useMemo(() => {
-    return searchActivities(q || "").slice(0, 8);
-  }, [q]);
+    const source = activities ?? [];
+    const query = q.trim().toLowerCase();
+    const filtered = !query
+      ? source
+      : source.filter((a) => {
+          const haystack = [
+            a.title,
+            a.titleEn,
+            a.category,
+            a.guideDisplayName,
+            ...(a.placeTags?.map((p) => `${p.name} ${p.nameEn ?? ""} ${p.province}`) ?? []),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(query);
+        });
+    return filtered.slice(0, 8);
+  }, [activities, q]);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();

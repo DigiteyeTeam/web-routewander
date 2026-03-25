@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ActivityCard from "./ActivityCard";
 import { useTranslation } from "@/context/LocaleContext";
-import { getAllActivities } from "@/data/activities";
-import { guides } from "@/data/guides";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
+import type { PublicGuide } from "@/lib/public-catalog";
+
+const FALLBACK_GUIDE_IMG =
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80";
 
 const REVIEWS = [
   {
@@ -109,8 +112,23 @@ const REVIEWS = [
 
 export default function SectionExperiences() {
   const { t, locale } = useTranslation();
+  const { activities: allActivities } = usePublicActivities();
+  const [publicGuides, setPublicGuides] = useState<PublicGuide[]>([]);
 
-  const allActivities = useMemo(() => getAllActivities(), []);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/public/guides", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setPublicGuides((d.guides ?? []) as PublicGuide[]);
+      })
+      .catch(() => {
+        if (!cancelled) setPublicGuides([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const generalGuideTrips = useMemo(() => {
     return allActivities.filter((a) => a.guideType === "general").slice(0, 4);
@@ -120,9 +138,7 @@ export default function SectionExperiences() {
     return allActivities.filter((a) => a.guideType === "local").slice(0, 4);
   }, [allActivities]);
 
-  const allGuides = useMemo(() => {
-    return [...guides].slice(0, 8);
-  }, []);
+  const allGuides = useMemo(() => publicGuides.slice(0, 8), [publicGuides]);
 
   return (
     <>
@@ -237,13 +253,13 @@ export default function SectionExperiences() {
             <div className="flex gap-4 overflow-x-auto pb-2 scroll-smooth">
               {allGuides.map((guide) => (
                 <Link
-                  key={guide.id}
-                  href={`/guides/${guide.id}`}
+                  key={guide.publicProfileId}
+                  href={`/guides/${encodeURIComponent(guide.publicProfileId)}`}
                   className="shrink-0 w-[260px] bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-all group"
                 >
                   <div className="relative aspect-[4/3] bg-slate-200">
                     <Image
-                      src={guide.image}
+                      src={guide.image || FALLBACK_GUIDE_IMG}
                       alt=""
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -256,9 +272,9 @@ export default function SectionExperiences() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-bold text-slate-800 text-base mb-1 group-hover:text-primary transition-colors">
-                      {t(guide.nameKey)}
+                      {guide.nameEn?.trim() || guide.name}
                     </h3>
-                    <p className="text-sm text-slate-500 mb-2">{t(guide.locationKey)}, {t("thailand")}</p>
+                    <p className="text-sm text-slate-500 mb-2">{guide.location}, {t("thailand")}</p>
                     <div className="flex items-center justify-between text-sm">
                       <span className="inline-flex items-center gap-1 text-amber-600">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -267,7 +283,9 @@ export default function SectionExperiences() {
                         {guide.rating}
                         <span className="text-slate-500">({guide.reviewCount})</span>
                       </span>
-                      <span className="text-slate-400 font-mono text-xs">{guide.licenseNumber}</span>
+                      {guide.licenseNumber ? (
+                        <span className="text-slate-400 font-mono text-xs">{guide.licenseNumber}</span>
+                      ) : null}
                     </div>
                   </div>
                 </Link>
@@ -279,13 +297,13 @@ export default function SectionExperiences() {
           <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-6 min-w-0">
             {allGuides.slice(0, 4).map((guide) => (
               <Link
-                key={guide.id}
-                href={`/guides/${guide.id}`}
+                key={guide.publicProfileId}
+                href={`/guides/${encodeURIComponent(guide.publicProfileId)}`}
                 className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-slate-300 transition-all group"
               >
                 <div className="relative aspect-[4/3] bg-slate-200">
                   <Image
-                    src={guide.image}
+                    src={guide.image || FALLBACK_GUIDE_IMG}
                     alt=""
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -298,9 +316,9 @@ export default function SectionExperiences() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-slate-800 text-lg mb-1 group-hover:text-primary transition-colors">
-                    {t(guide.nameKey)}
+                    {guide.nameEn?.trim() || guide.name}
                   </h3>
-                  <p className="text-sm text-slate-500 mb-2">{t(guide.locationKey)}, {t("thailand")}</p>
+                  <p className="text-sm text-slate-500 mb-2">{guide.location}, {t("thailand")}</p>
                   <div className="flex items-center justify-between text-sm">
                     <span className="inline-flex items-center gap-1 text-amber-600">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -309,7 +327,9 @@ export default function SectionExperiences() {
                       {guide.rating}
                       <span className="text-slate-500">({guide.reviewCount})</span>
                     </span>
-                    <span className="text-slate-400 font-mono text-xs">{guide.licenseNumber}</span>
+                    {guide.licenseNumber ? (
+                      <span className="text-slate-400 font-mono text-xs">{guide.licenseNumber}</span>
+                    ) : null}
                   </div>
                 </div>
               </Link>

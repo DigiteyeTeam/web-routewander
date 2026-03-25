@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import logo from "@/images/apple-touch-icon.png";
 import { useTranslation } from "@/context/LocaleContext";
 import { useMockAuth } from "@/context/MockAuthContext";
 import type { TranslationKey } from "@/i18n/translations";
+import { useNavCatalog } from "@/hooks/useNavCatalog";
 
 const placesCategories: { labelKey: TranslationKey; href: string; active: boolean }[] = [
   { labelKey: "navPlacesTop", href: "/places", active: true },
@@ -16,18 +17,6 @@ const placesCategories: { labelKey: TranslationKey; href: string; active: boolea
   { labelKey: "navPlacesNorth", href: "/destination/chiang-mai", active: false },
   { labelKey: "navPlacesSouth", href: "/destination/phuket", active: false },
   { labelKey: "navPlacesIslands", href: "/destination/krabi", active: false },
-];
-
-const placesList: { nameKey: TranslationKey; locationKey: TranslationKey; href: string; image: string }[] = [
-  { nameKey: "navPlaceGrandPalace", locationKey: "cityBangkok", href: "/destination/bangkok", image: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=100&q=80" },
-  { nameKey: "navPlaceWatArun", locationKey: "cityBangkok", href: "/destination/bangkok", image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=100&q=80" },
-  { nameKey: "navPlaceDoiInthanon", locationKey: "cityChiangMai", href: "/destination/chiang-mai", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=100&q=80" },
-  { nameKey: "navPlacePhiPhiIslands", locationKey: "cityKrabi", href: "/destination/krabi", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=100&q=80" },
-  { nameKey: "navPlaceWatPho", locationKey: "cityBangkok", href: "/destination/bangkok", image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=100&q=80" },
-  { nameKey: "navPlaceFloatingMarkets", locationKey: "citySamutSongkhram", href: "/destination/samut-songkhram", image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=100&q=80" },
-  { nameKey: "navPlaceKhaoYai", locationKey: "cityNakhonRatchasima", href: "/destination/bangkok", image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&q=80" },
-  { nameKey: "navPlaceChiangMaiOldCity", locationKey: "cityChiangMai", href: "/destination/chiang-mai", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=100&q=80" },
-  { nameKey: "navPlaceJamesBondIsland", locationKey: "cityPhangNga", href: "/destination/phuket", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=100&q=80" },
 ];
 
 const thingsCategories: { labelKey: TranslationKey; href: string; active: boolean }[] = [
@@ -39,31 +28,10 @@ const thingsCategories: { labelKey: TranslationKey; href: string; active: boolea
   { labelKey: "navThingsTours", href: "/destination/bangkok?filter=guided-tour", active: false },
 ];
 
-const thingsList: { nameKey: TranslationKey; href: string; image: string }[] = [
-  { nameKey: "navThingBangkokTemples", href: "/activity/1", image: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=100&q=80" },
-  { nameKey: "navThingFloatingMarket", href: "/activity/2", image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=100&q=80" },
-  { nameKey: "navThingChiangMaiDoiInthanon", href: "/activity/3", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=100&q=80" },
-  { nameKey: "navThingPhiPhiSnorkeling", href: "/activity/4", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=100&q=80" },
-  { nameKey: "navThingKhaoYaiSafari", href: "/activity/5", image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&q=80" },
-  { nameKey: "navThingThaiCooking", href: "/activity/6", image: "https://images.unsplash.com/photo-1551969014-7d2c4cddf0b6?w=100&q=80" },
-  { nameKey: "navThingBangkokStreetFood", href: "/activity/7", image: "https://images.unsplash.com/photo-1551969014-7d2c4cddf0b6?w=100&q=80" },
-  { nameKey: "navThingAyutthayaTemples", href: "/activity/8", image: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=100&q=80" },
-  { nameKey: "navThingElephantSanctuary", href: "/activity/9", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=100&q=80" },
-];
-
 const guidesCategories: { labelKey: TranslationKey; href: string; active: boolean; guideType: "all" | "general" | "local" }[] = [
   { labelKey: "navGuidesAll", href: "/guides", active: true, guideType: "all" },
   { labelKey: "generalGuide", href: "/guides?type=general", active: false, guideType: "general" },
   { labelKey: "localGuide", href: "/guides?type=local", active: false, guideType: "local" },
-];
-
-const guidesList: { nameKey: TranslationKey; guideType: "general" | "local"; locationKey: TranslationKey; href: string; image: string }[] = [
-  { nameKey: "navGuide1", guideType: "local", locationKey: "cityBangkok", href: "/guides/1", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" },
-  { nameKey: "navGuide2", guideType: "general", locationKey: "cityBangkok", href: "/guides/2", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" },
-  { nameKey: "navGuide3", guideType: "local", locationKey: "cityChiangMai", href: "/guides/3", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80" },
-  { nameKey: "navGuide4", guideType: "general", locationKey: "cityPhuket", href: "/guides/4", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" },
-  { nameKey: "navGuide5", guideType: "local", locationKey: "cityKrabi", href: "/guides/5", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" },
-  { nameKey: "navGuide6", guideType: "general", locationKey: "cityChiangMai", href: "/guides/6", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" },
 ];
 
 export default function Header() {
@@ -72,19 +40,47 @@ export default function Header() {
   const [guidesOpen, setGuidesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
-  const { t, locale, setLocale } = useTranslation();
+  const { t, locale } = useTranslation();
+  const { places, things, topGuides } = useNavCatalog(locale);
   const { data: session, status } = useSession();
   const { user: mockUser, signOut: signOutMock } = useMockAuth();
+  const [isGuideRegistered, setIsGuideRegistered] = useState(false);
   const isAuthenticated = status === "authenticated" && session?.user;
   const displayUser = isAuthenticated
-    ? { name: session!.user!.name ?? session!.user!.email ?? "", email: session!.user!.email ?? "", image: session!.user!.image ?? null }
-    : (mockUser ? { name: t("mockUserName"), email: mockUser.email, image: mockUser.image } : null);
+    ? {
+        name: session!.user!.name ?? session!.user!.email ?? "",
+        email: session!.user!.email ?? "",
+        image: session!.user!.image ?? null,
+      }
+    : mockUser
+      ? { name: t("mockUserName"), email: mockUser.email, image: mockUser.image }
+      : null;
   const closeDropdowns = () => {
     setPlacesOpen(false);
     setThingsOpen(false);
     setGuidesOpen(false);
     setProfileOpen(false);
   };
+
+  useEffect(() => {
+    if (!displayUser) {
+      setIsGuideRegistered(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/guides/me", { credentials: "include" });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled) setIsGuideRegistered(res.ok && data?.registered === true);
+      } catch {
+        if (!cancelled) setIsGuideRegistered(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [displayUser?.email]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent text-white md:bg-white md:bg-none md:text-slate-800 md:border-b md:border-slate-200">
@@ -155,9 +151,9 @@ export default function Header() {
                       ))}
                     </div>
                     <div className="flex-1 py-4 px-4 grid grid-cols-3 gap-x-4 gap-y-3">
-                      {placesList.map((place) => (
+                      {places.map((place) => (
                         <Link
-                          key={place.nameKey}
+                          key={place.slug}
                           href={place.href}
                           onClick={closeDropdowns}
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group"
@@ -173,10 +169,10 @@ export default function Header() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">
-                              {t(place.nameKey)}
+                              {place.name}
                             </p>
                             <p className="text-xs text-slate-500 truncate">
-                              {t("attractionIn")} {t(place.locationKey)}, {t("thailand")}
+                              {place.trips} {locale === "en" ? "trips" : "ทริป"}
                             </p>
                           </div>
                         </Link>
@@ -236,9 +232,9 @@ export default function Header() {
                       ))}
                     </div>
                     <div className="flex-1 py-4 px-4 grid grid-cols-3 gap-x-4 gap-y-3">
-                      {thingsList.map((item) => (
+                      {things.map((item) => (
                         <Link
-                          key={item.href}
+                          key={item.id}
                           href={item.href}
                           onClick={closeDropdowns}
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group"
@@ -254,7 +250,7 @@ export default function Header() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">
-                              {t(item.nameKey)}
+                              {item.title}
                             </p>
                           </div>
                         </Link>
@@ -318,9 +314,9 @@ export default function Header() {
                       ))}
                     </div>
                     <div className="flex-1 py-4 px-4 grid grid-cols-2 gap-x-4 gap-y-3">
-                      {guidesList.map((guide, idx) => (
+                      {topGuides.map((guide) => (
                         <Link
-                          key={idx}
+                          key={guide.id}
                           href={guide.href}
                           onClick={closeDropdowns}
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group"
@@ -337,10 +333,10 @@ export default function Header() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">
-                              {t(guide.nameKey)}
+                              {guide.name}
                             </p>
                             <p className="text-xs text-slate-500 truncate">
-                              {guide.guideType === "local" ? t("localGuide") : t("generalGuide")} · {t(guide.locationKey)}
+                              {guide.guideType === "local" ? t("localGuide") : t("generalGuide")} · {guide.location}
                             </p>
                           </div>
                         </Link>
@@ -382,25 +378,6 @@ export default function Header() {
             </svg>
             <span className="hidden md:block text-[11px]">{t("cart")}</span>
           </Link>
-          <div className="hidden sm:flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setLocale("th")}
-              className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${locale === "th" ? "bg-primary text-white" : "text-slate-500 hover:text-slate-700"}`}
-              aria-label="ไทย"
-            >
-              TH
-            </button>
-            <span className="text-slate-400 text-[11px]">|</span>
-            <button
-              type="button"
-              onClick={() => setLocale("en")}
-              className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${locale === "en" ? "bg-primary text-white" : "text-slate-500 hover:text-slate-700"}`}
-              aria-label="English"
-            >
-              EN
-            </button>
-          </div>
           <div
             className="hidden sm:block relative"
             onMouseEnter={() => {
@@ -429,10 +406,34 @@ export default function Header() {
                   </p>
                   {displayUser ? (
                     <>
-                      <div className="px-4 py-2.5 text-sm text-slate-600 border-b border-slate-100">
+                      {isGuideRegistered ? (
+                        <Link
+                          href="/guide-manager"
+                          onClick={closeDropdowns}
+                          className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
+                        >
+                          <span className="flex items-center gap-3">
+                            <svg className="w-5 h-5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+                            </svg>
+                            {locale === "en" ? "Guide manager" : "จัดการทริปไกด์"}
+                          </span>
+                          <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          router.push("/profile");
+                          closeDropdowns();
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100"
+                      >
                         <p className="font-medium text-slate-800 truncate">{displayUser.name}</p>
                         <p className="text-xs text-slate-500 truncate">{displayUser.email}</p>
-                      </div>
+                      </button>
                       <button
                         type="button"
                         onClick={() => {

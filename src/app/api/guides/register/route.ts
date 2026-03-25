@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import { getSession, getCurrentUserId } from "@/lib/auth";
 import { createGuide, getGuideByUserId } from "@/lib/guides-store";
 import { getNextAuthToken, getGuideApiBaseUrl, useExternalGuideApi } from "@/lib/api-proxy";
+import { THAILAND_PROVINCES } from "@/data/thailand-provinces";
 
-const VALID_LOCATION_SLUGS = ["bangkok", "chiang-mai", "phuket", "krabi", "pattaya", "samut-songkhram"];
+const VALID_LOCATION_SLUGS = [...THAILAND_PROVINCES.map((p) => p.slug), "pattaya"];
+
+const DISALLOWED_IN_ENGLISH_ONLY =
+  /[\u0E00-\u0E7F\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0F00-\u0FFF\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+function hasDisallowedNonLatinScript(text: string): boolean {
+  return DISALLOWED_IN_ENGLISH_ONLY.test(text);
+}
 
 export async function POST(request: Request) {
   if (useExternalGuideApi()) {
@@ -78,6 +85,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const nameEnRaw = typeof body.nameEn === "string" ? body.nameEn.trim() : "";
+  if (nameEnRaw && hasDisallowedNonLatinScript(nameEnRaw)) {
+    return NextResponse.json(
+      { error: "ชื่อไกด์ภาษาอังกฤษต้องเป็นตัวอักษรละติน (Latin letters) เท่านั้น" },
+      { status: 400 }
+    );
+  }
+  const nameEn = nameEnRaw || undefined;
+
   const guideType = body.guideType === "local" ? "local" : "general";
   const phone = typeof body.phone === "string" ? body.phone.trim() : undefined;
   const nationalId = typeof body.nationalId === "string" ? body.nationalId.trim() : undefined;
@@ -97,6 +113,7 @@ export async function POST(request: Request) {
   try {
     const guide = createGuide(uid, {
       name,
+      nameEn,
       guideType,
       locationSlug,
       image: image ?? null,

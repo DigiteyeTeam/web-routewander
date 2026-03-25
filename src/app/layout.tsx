@@ -42,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${inter.variable} ${notoSansThai.variable}`}>
+    <html lang="en" className={`${inter.variable} ${notoSansThai.variable}`}>
       <body className="font-sans">
         <LocaleProvider>
           <WishlistProvider>

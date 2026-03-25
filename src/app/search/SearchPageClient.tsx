@@ -6,12 +6,12 @@ import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
-import { FILTER_CATEGORIES, searchActivities, getAllActivities, type ActivityItem } from "@/data/activities";
-import { getGuideById } from "@/data/guides";
-import { ACTIVITY_LOCATIONS, DESTINATION_COORDINATES, THAILAND_CENTER, THAILAND_ZOOM, type Coordinates } from "@/data/locations";
+import { FILTER_CATEGORIES, type ActivityItem } from "@/data/activities";
+import { DESTINATION_COORDINATES, THAILAND_CENTER, THAILAND_ZOOM, type Coordinates } from "@/data/locations";
 import { useMemo, useState } from "react";
 import { useTranslation } from "@/context/LocaleContext";
 import { filterKeyToTKey } from "@/i18n/translations";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
 
 const LocationMapComponent = dynamic(() => import("@/components/LocationMap"), {
   ssr: false,
@@ -42,6 +42,7 @@ type SearchPageClientProps = {
 export default function SearchPageClient({ initialQuery, initialGuideType, initialView }: SearchPageClientProps) {
   const q = initialQuery;
   const { t, locale } = useTranslation();
+  const { activities: allActivities } = usePublicActivities();
   const [viewMode, setViewMode] = useState<ViewMode>(initialView === "map" ? "map" : "list");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [guideTypeFilter, setGuideTypeFilter] = useState(initialGuideType || "all");
@@ -51,11 +52,25 @@ export default function SearchPageClient({ initialQuery, initialGuideType, initi
   const [showMobilePanel, setShowMobilePanel] = useState(false);
 
   const allResults = useMemo(() => {
-    if (q) {
-      return searchActivities(q);
-    }
-    return getAllActivities();
-  }, [q]);
+    const source = allActivities ?? [];
+    const query = q.trim().toLowerCase();
+    if (!query) return source;
+    return source.filter((a) => {
+      const haystack = [
+        a.title,
+        a.titleEn,
+        a.category,
+        a.duration,
+        a.durationEn,
+        a.guideDisplayName,
+        ...(a.placeTags?.map((p) => `${p.name} ${p.nameEn ?? ""} ${p.province}`) ?? []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [allActivities, q]);
 
   const results = useMemo(() => {
     let filtered = allResults;
@@ -77,12 +92,14 @@ export default function SearchPageClient({ initialQuery, initialGuideType, initi
 
   const activitiesWithLocations = useMemo(() => {
     return results.map((activity) => {
-      const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
+      const dest = DESTINATION_COORDINATES.find((d) => d.slug === activity.slug);
+      const tag = activity.placeTags?.find((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      const coordinates = tag?.lat != null && tag?.lng != null ? ({ lat: tag.lat, lng: tag.lng } as Coordinates) : dest?.coordinates;
       return {
         ...activity,
-        coordinates: location?.coordinates,
-        locationName: locale === "en" ? location?.locationNameEn : location?.locationName,
-        locationKey: location?.locationName || "",
+        coordinates,
+        locationName: locale === "en" ? dest?.nameEn : dest?.name,
+        locationKey: activity.slug || "",
       };
     }).filter((a) => a.coordinates);
   }, [results, locale]);
@@ -91,17 +108,16 @@ export default function SearchPageClient({ initialQuery, initialGuideType, initi
     const groups = new Map<string, LocationGroup>();
     
     activitiesWithLocations.forEach((activity) => {
-      const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
-      if (!location) return;
-      
-      const key = location.locationName;
+      const dest = DESTINATION_COORDINATES.find((d) => d.slug === activity.slug);
+      if (!dest || !activity.coordinates) return;
+      const key = activity.slug;
       
       if (!groups.has(key)) {
         groups.set(key, {
           locationKey: key,
-          locationName: location.locationName,
-          locationNameEn: location.locationNameEn,
-          coordinates: location.coordinates,
+          locationName: dest.name,
+          locationNameEn: dest.nameEn,
+          coordinates: activity.coordinates,
           trips: [],
           tripCount: 0,
         });
@@ -570,8 +586,7 @@ export default function SearchPageClient({ initialQuery, initialGuideType, initi
                 {/* Mobile: Horizontal cards */}
                 <div className="sm:hidden space-y-3">
                   {results.map((a) => {
-                    const guide = a.guideId ? getGuideById(a.guideId) : null;
-                    const guideName = guide ? t(guide.nameKey) : null;
+                    const guideName = a.guideDisplayName ?? null;
                     return (
                       <Link
                         key={a.id}
@@ -679,8 +694,7 @@ function MapActivityCard({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: (key: any) => string;
 }) {
-  const guide = activity.guideId ? getGuideById(activity.guideId) : null;
-  const guideName = guide ? t(guide.nameKey) : null;
+  const guideName = activity.guideDisplayName ?? null;
 
   return (
     <Link

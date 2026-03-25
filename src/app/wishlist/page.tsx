@@ -6,13 +6,17 @@ import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
 import { useWishlist } from "@/context/WishlistContext";
 import { useTranslation } from "@/context/LocaleContext";
-import { getActivitiesByIds } from "@/data/activities";
 import { useMemo } from "react";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
 
 export default function WishlistPage() {
   const { activityIds } = useWishlist();
   const { t } = useTranslation();
-  const activities = useMemo(() => getActivitiesByIds(activityIds), [activityIds]);
+  const { activities: publicActivities, loading } = usePublicActivities();
+  const activities = useMemo(
+    () => (publicActivities ?? []).filter((a) => activityIds.includes(a.id)),
+    [publicActivities, activityIds]
+  );
 
   return (
     <>
@@ -23,7 +27,11 @@ export default function WishlistPage() {
             {t("wishlist")}
           </h1>
 
-          {activities.length === 0 ? (
+          {loading ? (
+            <div className="py-16 flex justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+            </div>
+          ) : activities.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
               <p className="text-slate-600 mb-4">{t("wishlistEmpty")}</p>
               <Link href="/" className="text-primary font-medium hover:underline">
@@ -60,6 +68,7 @@ export default function WishlistPage() {
                     banner={a.banner}
                     guideType={a.guideType}
                     guideId={a.guideId}
+                    guideDisplayName={a.guideDisplayName}
                     tripCode={a.tripCode}
                   />
                 ))}

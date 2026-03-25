@@ -3,20 +3,25 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import {
-  getActivityById,
-  DESTINATION_NAMES,
-  getActivitiesByDestination,
-} from "@/data/activities";
+import { getActivityById, DESTINATION_NAMES } from "@/data/activities";
 import { getGuideById } from "@/data/guides";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
+import { publicTripToActivityDetail, type PublicTrip } from "@/lib/public-catalog";
 import ActivityCard from "@/components/ActivityCard";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useTranslation } from "@/context/LocaleContext";
 import { slugToCityKey } from "@/i18n/translations";
+import { Calendar } from "lucide-react";
+
+function formatIsoDateDdMmYyyy(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+}
 
 function AboutIcon({ type }: { type: string }) {
   if (type === "cancel") {
@@ -53,23 +58,99 @@ function AboutIcon({ type }: { type: string }) {
 export default function ActivityPage() {
   const params = useParams();
   const id = (params?.id as string) || "";
-  const activity = useMemo(() => getActivityById(id), [id]);
-  const guide = useMemo(() => activity?.guideId ? getGuideById(activity.guideId) : null, [activity]);
+  const [apiTrip, setApiTrip] = useState<PublicTrip | null>(null);
+  const [catalogResolved, setCatalogResolved] = useState(false);
+  const { activities: catalog } = usePublicActivities();
+
+  useEffect(() => {
+    if (!id) {
+      setApiTrip(null);
+      setCatalogResolved(true);
+      return;
+    }
+    let cancelled = false;
+    setCatalogResolved(false);
+    (async () => {
+      try {
+        const res = await fetch(`/api/public/trips/${encodeURIComponent(id)}`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (!cancelled && data.trip) setApiTrip(data.trip as PublicTrip);
+          else if (!cancelled) setApiTrip(null);
+        } else if (!cancelled) setApiTrip(null);
+      } catch {
+        if (!cancelled) setApiTrip(null);
+      } finally {
+        if (!cancelled) setCatalogResolved(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const mockActivity = useMemo(() => getActivityById(id), [id]);
+  const activity = useMemo(() => {
+    if (apiTrip) return publicTripToActivityDetail(apiTrip);
+    return mockActivity;
+  }, [apiTrip, mockActivity]);
+
+  const guide = useMemo(() => {
+    if (apiTrip || !activity?.guideId) return null;
+    return getGuideById(activity.guideId);
+  }, [activity, apiTrip]);
+
+  const apiGuide = apiTrip
+    ? {
+        linkId: apiTrip.guideId,
+        name: apiTrip.guideName,
+        image: apiTrip.guideImage || apiTrip.image,
+        guideType: apiTrip.guideType,
+        licenseNumber: "" as string,
+      }
+    : null;
 
   const related = useMemo(() => {
     if (!activity) return [];
-    return getActivitiesByDestination(activity.slug).filter((a) => a.id !== id).slice(0, 4);
-  }, [activity, id]);
+    return catalog.filter((a) => a.slug === activity.slug && a.id !== id).slice(0, 4);
+  }, [activity, id, catalog]);
 
-  const [itineraryOpen, setItineraryOpen] = useState(true);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
   const [travelers, setTravelers] = useState(1);
   const [date, setDate] = useState("");
   const [language, setLanguage] = useState("ไทย / อังกฤษ");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const router = useRouter();
   const { t, locale } = useTranslation();
+  const galleryImages = useMemo(() => {
+    const raw = [activity?.image, ...(activity?.imageGallery ?? [])];
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const url of raw) {
+      const u = typeof url === "string" ? url.trim() : "";
+      if (!u || seen.has(u)) continue;
+      seen.add(u);
+      out.push(u);
+    }
+    return out.slice(0, 5);
+  }, [activity?.image, activity?.imageGallery]);
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [activity?.id, galleryImages.length]);
+
+  if (!catalogResolved) {
+    return (
+      <>
+        <Header />
+        <main className="pt-24 pb-16 min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   if (!activity) {
     return (
@@ -122,7 +203,13 @@ export default function ActivityPage() {
                 {/* แกลเลอรี่ – อยู่บนสุดสำหรับมือถือ */}
                 <div className="flex gap-2 mb-5 sm:mb-8">
                   <div className="relative flex-1 aspect-[16/10] rounded-xl overflow-hidden bg-slate-200">
-                    <Image src={activity.image} alt={activity.imageAlt} fill className="object-cover" priority />
+                    <Image
+                      src={galleryImages[selectedImageIndex] || galleryImages[0] || activity.image}
+                      alt={activity.imageAlt}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
                     <button
                       type="button"
                       className={`absolute top-3 right-3 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -146,24 +233,47 @@ export default function ActivityPage() {
                     >
                       {t("share")}
                     </button>
-                    {/* จุดบอกจำนวนรูป – สไตล์คล้าย dot carousel */}
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
-                    </div>
+                    {/* จุดบอกจำนวนรูป */}
+                    {galleryImages.length > 1 ? (
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        {galleryImages.map((_, i) => (
+                          <button
+                            type="button"
+                            key={`dot-${i}`}
+                            onClick={() => setSelectedImageIndex(i)}
+                            aria-label={`view image ${i + 1}`}
+                            className={`h-2 w-2 rounded-full transition ${
+                              i === selectedImageIndex ? "bg-white scale-110" : "bg-white/60 hover:bg-white/80"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="hidden sm:flex flex-col gap-2 w-24 shrink-0">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-slate-200">
-                      <Image src={activity.image} alt="" width={96} height={96} className="object-cover w-full h-full" />
+                  {galleryImages.length > 1 ? (
+                    <div className="hidden sm:flex flex-col gap-2 w-24 shrink-0">
+                      {galleryImages.slice(1, 3).map((img, idx) => {
+                        const actualIndex = idx + 1;
+                        return (
+                        <button
+                          type="button"
+                          key={`thumb-${idx}`}
+                          onClick={() => setSelectedImageIndex(actualIndex)}
+                          className={`aspect-square rounded-lg overflow-hidden bg-slate-200 relative text-left border-2 ${
+                            selectedImageIndex === actualIndex ? "border-primary" : "border-transparent hover:border-white/70"
+                          }`}
+                          aria-label={`view image ${actualIndex + 1}`}
+                        >
+                          <Image src={img} alt="" width={96} height={96} className="object-cover w-full h-full" />
+                          {idx === 1 && galleryImages.length > 3 ? (
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-sm">
+                              +{galleryImages.length - 3}
+                            </span>
+                          ) : null}
+                        </button>
+                      )})}
                     </div>
-                    <div className="aspect-square rounded-lg overflow-hidden bg-slate-200 relative">
-                      <Image src={activity.image} alt="" width={96} height={96} className="object-cover w-full h-full" />
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-sm">
-                        +2
-                      </span>
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
 
                 {/* ข้อมูลชื่อ / คะแนน / ผู้ให้บริการ – อยู่ใต้รูป และตัวอักษรเล็กลงบนมือถือ */}
@@ -195,23 +305,45 @@ export default function ActivityPage() {
                       </>
                     )}
                   </div>
-                  {guide && (
+                  {(apiGuide || guide) && (
                     <div className="flex items-center gap-3 mt-3 p-3 bg-slate-50 rounded-xl">
-                      <Link href={`/guides/${guide.id}`} className="shrink-0">
+                      <Link
+                        href={`/guides/${encodeURIComponent(apiGuide ? apiGuide.linkId : guide!.id)}`}
+                        className="shrink-0"
+                      >
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-200">
-                          <Image src={guide.image} alt="" width={48} height={48} className="object-cover w-full h-full" />
-                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${guide.guideType === "local" ? "bg-green-500" : "bg-orange-500"}`} />
+                          <Image
+                            src={apiGuide ? apiGuide.image : guide!.image}
+                            alt=""
+                            width={48}
+                            height={48}
+                            className="object-cover w-full h-full"
+                          />
+                          <span
+                            className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                              (apiGuide ?? guide)!.guideType === "local" ? "bg-green-500" : "bg-orange-500"
+                            }`}
+                          />
                         </div>
                       </Link>
                       <div className="min-w-0 flex-1">
-                        <Link href={`/guides/${guide.id}`} className="font-semibold text-slate-800 hover:text-primary transition-colors">
-                          {t(guide.nameKey)}
+                        <Link
+                          href={`/guides/${encodeURIComponent(apiGuide ? apiGuide.linkId : guide!.id)}`}
+                          className="font-semibold text-slate-800 hover:text-primary transition-colors"
+                        >
+                          {apiGuide ? apiGuide.name : t(guide!.nameKey)}
                         </Link>
                         <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${guide.guideType === "local" ? "bg-green-500 text-white" : "bg-orange-500 text-white"}`}>
-                            {guide.guideType === "local" ? t("localGuide") : t("generalGuide")}
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                              (apiGuide ?? guide)!.guideType === "local" ? "bg-green-500 text-white" : "bg-orange-500 text-white"
+                            }`}
+                          >
+                            {(apiGuide ?? guide)!.guideType === "local" ? t("localGuide") : t("generalGuide")}
                           </span>
-                          <span className="font-mono">{guide.licenseNumber}</span>
+                          {(apiGuide?.licenseNumber || guide?.licenseNumber) ? (
+                            <span className="font-mono">{apiGuide?.licenseNumber || guide?.licenseNumber}</span>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -263,41 +395,6 @@ export default function ActivityPage() {
                   </li>
                 </ul>
               </section>
-
-              {/* เลือกจาก X ตัวเลือก */}
-              {activity.options && activity.options.length > 0 && (
-                <section className="mb-8">
-                  <h2 className="text-lg font-bold text-slate-800 mb-4">{t("chooseFromOptions")} {activity.options.length} {t("options")}</h2>
-                  <div className="space-y-4">
-                    {activity.options.map((opt, i) => (
-                      <div
-                        key={i}
-                        className={`p-4 rounded-xl border bg-white transition-colors ${
-                          selectedOptionIndex === i ? "border-primary ring-2 ring-primary/20" : "border-slate-200"
-                        }`}
-                      >
-                        <h3 className="font-semibold text-slate-800 mb-2">{opt.title}</h3>
-                        <p className="text-sm text-slate-600 mb-2">{opt.duration} · {t("guideLabel")}: {opt.guideLang}</p>
-                        <p className="text-sm text-slate-500 mb-3">{t("meetingAt")} {opt.meeting}</p>
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <p className="text-slate-700">
-                            {t("startingFrom")} <strong>{opt.price.toLocaleString()} THB</strong>
-                            {opt.pricePerGroup ? ` ${t("perGroup")}` : ` ${t("perPerson")}`}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedOptionIndex(i)}
-                            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-sm"
-                          >
-                            {t("select")}
-                          </button>
-                        </div>
-                        <p className="text-xs text-green-600 mt-2">{t("freeCancellation")}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
 
               {/* ไฮไลท์ */}
               {activity.highlights && activity.highlights.length > 0 && (
@@ -352,7 +449,16 @@ export default function ActivityPage() {
                 <section className="mb-8">
                   <h2 className="text-lg font-bold text-slate-800 mb-3">{t("meetingPoint")}</h2>
                   <p className="text-slate-700 mb-2">{activity.meetingPoint}</p>
-                  <a href="#" className="text-primary font-medium text-sm hover:underline">{t("openInMaps")} →</a>
+                  {activity.meetingPointMapUrl?.trim() ? (
+                    <a
+                      href={activity.meetingPointMapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary font-medium text-sm hover:underline"
+                    >
+                      {t("openInMaps")} →
+                    </a>
+                  ) : null}
                 </section>
               )}
 
@@ -379,83 +485,32 @@ export default function ActivityPage() {
               {activity.itinerary && activity.itinerary.length > 0 && (
                 <section className="mb-8">
                   <h2 className="text-lg font-bold text-slate-800 mb-4">{t("itinerary")}</h2>
-                  {itineraryOpen ? (
-                    <>
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <div className="flex-1 min-w-0">
-                          <div className="relative pl-8 border-l-2 border-primary/60 space-y-0">
-                            {activity.itinerary.map((step, i) => (
-                              <div key={i} className="relative pb-6 last:pb-0">
-                                <span className="absolute left-0 -translate-x-[calc(0.5rem+5px)] top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white shrink-0"
-                                  style={{
-                                    borderColor: step.isMainStop ? "var(--color-primary, #2563eb)" : "#94a3b8",
-                                    backgroundColor: step.isMainStop ? "var(--color-primary, #2563eb)" : "#f1f5f9",
-                                  }}
-                                >
-                                  {step.type === "travel" && (
-                                    <svg className="w-2.5 h-2.5 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
-                                    </svg>
-                                  )}
-                                  {step.type === "start_pickup" && (
-                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                  {step.type === "activity" && (
-                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                  {step.type === "drop_off" && (
-                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </span>
-                                <div className="ml-4">
-                                  <p className="font-medium text-slate-800">{step.title}</p>
-                                  {(step.detail || step.duration) && (
-                                    <p className="text-sm text-slate-600">
-                                      {step.detail}
-                                      {step.detail && step.duration ? " " : ""}
-                                      {step.duration && `(${step.duration})`}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="md:w-80 lg:w-96 shrink-0 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/3] md:aspect-auto md:min-h-[280px]">
-                          <iframe
-                            title={t("map")}
-                            src={`https://www.google.com/maps?q=${encodeURIComponent(cityName + " ประเทศไทย")}&output=embed`}
-                            className="w-full h-full min-h-[240px]"
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-3 text-sm text-slate-500">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full bg-primary" /> {t("mainStop")}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full border-2 border-slate-300 bg-slate-100" /> {t("otherStops")}
-                        </span>
-                      </div>
-                      <button type="button" onClick={() => setItineraryOpen(false)} className="mt-3 text-primary text-sm font-medium hover:underline">
-                        {t("hideItinerary")}
-                      </button>
-                    </>
-                  ) : (
-                    <button type="button" onClick={() => setItineraryOpen(true)} className="text-primary text-sm font-medium hover:underline">
-                      {t("showItinerary")}
-                    </button>
-                  )}
+                  <ol className="space-y-3 border-l-2 border-primary/30 pl-4">
+                    {activity.itinerary.map((step, i) => (
+                      <li key={i} className="relative">
+                        <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-primary" />
+                        <p className="font-semibold text-slate-800">
+                          {locale === "en" ? step.titleEn?.trim() || step.title : step.title}
+                        </p>
+                        {(locale === "en" ? step.detailEn?.trim() || step.detail : step.detail) ? (
+                          <p className="text-sm text-slate-600">
+                            {locale === "en" ? step.detailEn?.trim() || step.detail : step.detail}
+                          </p>
+                        ) : null}
+                        {step.duration ? <p className="text-xs text-slate-500">{step.duration}</p> : null}
+                        {step.mapUrl?.trim() ? (
+                          <a
+                            href={step.mapUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+                          >
+                            {t("openInMaps")}
+                          </a>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ol>
                 </section>
               )}
 
@@ -512,13 +567,22 @@ export default function ActivityPage() {
                   </label>
                   <label className="block">
                     <span className="text-xs text-slate-500">{t("dateLabel")}</span>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      min={new Date().toISOString().slice(0, 10)}
-                      className="w-full mt-1 py-2.5 px-3 rounded-lg border border-slate-200 text-slate-800 bg-white"
-                    />
+                    <div className="relative mt-1">
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        min={new Date().toISOString().slice(0, 10)}
+                        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                        aria-label={t("dateLabel")}
+                      />
+                      <div className="pointer-events-none flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white py-2.5 px-3 text-slate-800">
+                        <span className={date ? "text-slate-800" : "text-slate-400"}>
+                          {date ? formatIsoDateDdMmYyyy(date) : "DD / MM / YYYY"}
+                        </span>
+                        <Calendar className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                      </div>
+                    </div>
                   </label>
                   <label className="block">
                     <span className="text-xs text-slate-500">{t("languageLabel")}</span>

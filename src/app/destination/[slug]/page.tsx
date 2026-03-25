@@ -8,12 +8,9 @@ import { useMemo, useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ActivityCard from "@/components/ActivityCard";
-import {
-  FILTER_CATEGORIES,
-  getFilteredActivities,
-  type ActivityItem,
-} from "@/data/activities";
-import { ACTIVITY_LOCATIONS, DESTINATION_COORDINATES, THAILAND_CENTER, THAILAND_ZOOM, type Coordinates } from "@/data/locations";
+import { FILTER_CATEGORIES, type ActivityItem } from "@/data/activities";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
+import { DESTINATION_COORDINATES, THAILAND_CENTER, THAILAND_ZOOM, type Coordinates } from "@/data/locations";
 import { getGuideById } from "@/data/guides";
 import { useTranslation } from "@/context/LocaleContext";
 import { filterKeyToTKey, slugToCityKey } from "@/i18n/translations";
@@ -70,51 +67,61 @@ export default function DestinationPage() {
     return key ? t(key) : slug;
   }, [slug, t]);
 
+  const { activities: allPublic, loading: catalogLoading } = usePublicActivities();
+
   const activities = useMemo(() => {
-    let filtered = getFilteredActivities(slug, selectedFilter);
+    let filtered = allPublic.filter((a) => a.slug === slug);
+    if (selectedFilter !== "all") {
+      if (selectedFilter === "food") {
+        filtered = filtered.filter((a) => a.categoryKey === "food" || a.categoryKey === "food-drink");
+      } else {
+        filtered = filtered.filter((a) => a.categoryKey === selectedFilter);
+      }
+    }
     if (guideTypeFilter !== "all") {
       filtered = filtered.filter((a) => a.guideType === guideTypeFilter);
     }
     return filtered;
-  }, [slug, selectedFilter, guideTypeFilter]);
+  }, [allPublic, slug, selectedFilter, guideTypeFilter]);
 
   const activitiesWithLocations = useMemo(() => {
     return activities.map((activity) => {
-      const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
+      const dest = DESTINATION_COORDINATES.find((d) => d.slug === activity.slug);
+      const coordinates = dest?.coordinates ?? THAILAND_CENTER;
       return {
         ...activity,
-        coordinates: location?.coordinates,
-        locationName: locale === "en" ? location?.locationNameEn : location?.locationName,
-        locationKey: location?.locationName || "",
+        coordinates,
+        locationName: locale === "en" ? dest?.nameEn : dest?.name,
+        locationKey: dest?.name || "",
       };
-    }).filter((a) => a.coordinates);
+    });
   }, [activities, locale]);
 
   const locationGroups = useMemo(() => {
     const groups = new Map<string, LocationGroup>();
-    
+
     activitiesWithLocations.forEach((activity) => {
-      const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
-      if (!location) return;
-      
-      const key = location.locationName;
-      
+      const dest = DESTINATION_COORDINATES.find((d) => d.slug === activity.slug);
+      if (!dest) return;
+
+      const key = dest.name;
+
       if (!groups.has(key)) {
         groups.set(key, {
           locationKey: key,
-          locationName: location.locationName,
-          locationNameEn: location.locationNameEn,
-          coordinates: location.coordinates,
+          locationName: dest.name,
+          locationNameEn: dest.nameEn,
+          coordinates: dest.coordinates,
           trips: [],
           tripCount: 0,
         });
       }
-      
+
       const group = groups.get(key)!;
       group.trips.push(activity);
       group.tripCount = group.trips.length;
     });
-    
+
     return Array.from(groups.values());
   }, [activitiesWithLocations]);
 
@@ -136,6 +143,11 @@ export default function DestinationPage() {
     <>
       <Header />
       <main className="pt-16 min-h-screen bg-slate-50">
+        {catalogLoading && (
+          <div className="bg-slate-100 border-b border-slate-200 text-center py-1.5 text-xs text-slate-600">
+            {locale === "en" ? "Loading tours…" : "กำลังโหลดทริป…"}
+          </div>
+        )}
         {/* Sticky Filter Bar */}
         <div className="sticky top-16 z-30 bg-white border-b border-slate-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 py-3">

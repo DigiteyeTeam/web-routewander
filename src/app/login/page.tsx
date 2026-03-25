@@ -43,81 +43,181 @@ function LoginForm() {
 
   const handleGoogleSignInGuide = () => {
     setLoading("guide");
-    signIn("google", { callbackUrl: "/register-guide/form" });
+    // หลังล็อกอินด้วย Google สำหรับไกด์ ให้ไปหน้า register-guide ก่อน
+    signIn("google", { callbackUrl: "/register-guide" });
   };
 
   return (
-    <>
-      <main className="pt-24 pb-16 min-h-screen bg-slate-50">
-        <div className="max-w-md mx-auto px-4 py-12">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-            <h1 className="text-xl font-bold text-slate-800 mb-2 text-center">
-              {t("loginTitle")}
-            </h1>
-            <p className="text-sm text-slate-500 mb-8 text-center">
-              {t("loginSubtitle")}
-            </p>
+    <main className="pt-24 pb-16 min-h-[calc(100vh-6rem)] bg-slate-50 flex items-center justify-center">
+      <div className="w-full max-w-5xl px-4">
+        <div className="flex flex-col md:flex-row bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Left: form + copy */}
+          <section className="w-full md:w-[50%] lg:w-[45%] p-8 md:p-10 lg:p-12 flex flex-col">
+            <header className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary text-sm font-semibold">RW</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-slate-900 tracking-tight">
+                    RouteWander
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Travel &amp; Local Guides
+                  </span>
+                </div>
+              </div>
+              <Link
+                href="/"
+                className="hidden md:inline-flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                <span>{t("backToHome")}</span>
+              </Link>
+            </header>
+
+            <div className="mt-4 mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mb-2">
+                {t("loginTitle")}
+              </h1>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {t("loginSubtitle")}
+              </p>
+            </div>
 
             {oauthError && (
-              <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                <p className="font-medium mb-1">
+              <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+                <p className="font-semibold mb-1">
                   {locale === "en" ? "Google sign-in failed" : "เข้าสู่ระบบด้วย Google ไม่สำเร็จ"}
                 </p>
-                <p className="text-amber-700">
+                <p className="text-amber-800">
                   {locale === "en"
-                    ? "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local, then restart the dev server (npm run dev)."
-                    : "กรุณาตั้งค่า GOOGLE_CLIENT_ID และ GOOGLE_CLIENT_SECRET ในไฟล์ .env.local จากนั้น restart dev server (npm run dev)"}
+                    ? "Please check your Google OAuth client configuration and try again."
+                    : "กรุณาตรวจสอบการตั้งค่า Google OAuth แล้วลองใหม่อีกครั้ง"}
                 </p>
               </div>
             )}
 
-            {/* 1. Google sign-in สำหรับนักท่องเที่ยว */}
+            {/* Traveler only login on this page */}
             <div className="space-y-4">
               <button
                 type="button"
                 onClick={handleGoogleSignInTraveler}
                 disabled={loading !== null}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-left"
+                className="group w-full rounded-2xl border border-slate-200 hover:border-slate-300 bg-slate-50/60 hover:bg-slate-50 px-4 py-4 text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <GoogleIcon />
-                <div className="flex-1 min-w-0">
-                  <span className="block font-semibold">
-                    {loading === "traveler" ? "..." : t("signInGoogleAsTraveler")}
-                  </span>
-                  <span className="block text-xs text-slate-500 mt-0.5">
-                    {t("signInGoogleAsTravelerDesc")}
-                  </span>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                      <GoogleIcon />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-flex items-center rounded-full bg-slate-900 text-slate-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+                        Traveler
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {locale === "en" ? "For tourists" : "สำหรับนักท่องเที่ยว"}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {loading === "traveler" ? "..." : t("signInGoogleAsTraveler")}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {t("signInGoogleAsTravelerDesc")}
+                    </p>
+                  </div>
                 </div>
               </button>
-
-              {/* 2. Google sign-in สำหรับไกด์ */}
-              <button
-                type="button"
-                onClick={handleGoogleSignInGuide}
-                disabled={loading !== null}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-slate-800 font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-left"
+              {/* Link to guide login page */}
+              <Link
+                href="/login/guide"
+                className="block w-full text-center rounded-2xl border border-emerald-200 bg-white hover:bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 transition-colors"
               >
-                <GoogleIcon />
-                <div className="flex-1 min-w-0">
-                  <span className="block font-semibold">
-                    {loading === "guide" ? "..." : t("signInGoogleAsGuide")}
-                  </span>
-                  <span className="block text-xs text-slate-500 mt-0.5">
-                    {t("signInGoogleAsGuideDesc")}
-                  </span>
-                </div>
-              </button>
+                {locale === "en" ? "Login for guides" : "สำหรับไกด์ RouteWander"}
+              </Link>
             </div>
 
-            <p className="mt-6 text-xs text-slate-500 text-center">
+            <p className="mt-8 text-[11px] text-slate-400">
+              {locale === "en"
+                ? "By continuing, you agree to our Terms and Privacy Policy."
+                : "การดำเนินการต่อถือว่าคุณยอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัวของเรา"}
+            </p>
+
+            <div className="mt-4 flex items-center justify-between text-xs text-slate-500 md:hidden">
+              <Link
+                href="/login/guide"
+                className="text-emerald-700 font-medium hover:underline"
+              >
+                {locale === "en" ? "Login for guides" : "สำหรับไกด์ RouteWander"}
+              </Link>
               <Link href="/" className="text-primary hover:underline">
                 {t("backToHome")}
               </Link>
-            </p>
-          </div>
+            </div>
+          </section>
+
+          {/* Right: visual panel */}
+          <section className="hidden md:flex flex-1 p-6 lg:p-8">
+            <div className="relative w-full h-full rounded-[2rem] overflow-hidden bg-gradient-to-br from-sky-100 via-indigo-50 to-amber-50 shadow-sm">
+              {/* soft shapes */}
+              <div className="absolute inset-0 opacity-70">
+                <div className="absolute w-64 h-64 md:w-72 md:h-72 bg-gradient-to-br from-sky-200 via-indigo-300 to-fuchsia-300 rounded-full blur-2xl -top-10 -left-10" />
+                <div className="absolute w-40 h-40 bg-gradient-to-br from-amber-200 via-yellow-200 to-orange-200 rounded-full blur-xl bottom-10 right-4" />
+              </div>
+              <div className="absolute inset-x-8 inset-y-10 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span className="px-3 py-1 rounded-full bg-white/70 border border-white/80 backdrop-blur text-[11px] font-medium text-slate-700">
+                    {locale === "en" ? "Your personal travel account" : "บัญชีสำหรับนักท่องเที่ยว RouteWander"}
+                  </span>
+                  <span className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 text-[11px] text-slate-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    {locale === "en" ? "Secure by Google Sign-In" : "ปลอดภัยด้วย Google Sign-In"}
+                  </span>
+                </div>
+                <div className="space-y-4 text-slate-800">
+                  <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
+                    {locale === "en"
+                      ? "Sign in to plan and save your trips in Thailand."
+                      : "ล็อกอินเพื่อวางแผนและเก็บทริปเที่ยวทั่วไทยของคุณ"}
+                  </h2>
+                  <ul className="space-y-2 text-xs md:text-sm text-slate-700">
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span>
+                        {locale === "en"
+                          ? "Keep your favorite places, plans and bookings in one place."
+                          : "เก็บสถานที่ถูกใจ แผนเที่ยว และการจองของคุณไว้ที่เดียว"}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-sky-500" />
+                      <span>
+                        {locale === "en"
+                          ? "Designed for solo travelers, friends and families visiting Thailand."
+                          : "ออกแบบมาสำหรับนักท่องเที่ยวทั้งเดินทางคนเดียว เพื่อน และครอบครัวที่มาเที่ยวไทย"}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                      <span>
+                        {locale === "en"
+                          ? "Your guide account is separate. Apply to become a guide in the guide area."
+                          : "บัญชีนักท่องเที่ยวจะแยกจากบัญชีไกด์ หากต้องการเป็นไกด์สามารถสมัครได้ในส่วนสำหรับไกด์"}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>© 2024 RouteWander</span>
+                  <span>{locale === "en" ? "Bangkok, Thailand" : "กรุงเทพฯ ประเทศไทย"}</span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }
 

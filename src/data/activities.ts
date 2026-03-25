@@ -20,12 +20,24 @@ export type FeatureKey =
 
 export type GuideType = "general" | "local";
 
+export type PlaceTag = {
+  name: string;
+  nameEn?: string;
+  province: string;
+  district?: string;
+  googleMapsUrl?: string;
+  lat?: number;
+  lng?: number;
+  slug?: string;
+};
+
 export type ActivityItem = {
   id: string;
   slug: string;
   title: string;
   titleEn?: string;
   image: string;
+  imageGallery?: string[];
   imageAlt: string;
   rating: number;
   reviewCount: number;
@@ -43,7 +55,10 @@ export type ActivityItem = {
   banner?: string;
   guideType?: GuideType;
   guideId?: string;
+  /** ชื่อไกด์จาก API (ไม่ใช้ mock getGuideById) */
+  guideDisplayName?: string;
   tripCode?: string;
+  placeTags?: PlaceTag[];
 };
 
 /** ตัวกรอง: สถานที่เที่ยว และร้านอาหาร ไว้ก่อน ตามที่ขอ */
@@ -958,9 +973,17 @@ export function searchActivities(query: string): ActivityItem[] {
 export type ItineraryStep = {
   type: "start_pickup" | "travel" | "activity" | "rest" | "drop_off";
   title: string;
+  titleEn?: string;
   detail?: string;
+  detailEn?: string;
   duration?: string;
   isMainStop?: boolean;
+  /** Google Maps URL (แปะ/แนบลิงก์) */
+  mapUrl?: string;
+  /** จังหวัด (ใช้เมื่อ isMainStop — แสดงบนแผนที่) ชื่อไทยตาม DESTINATION_NAMES */
+  province?: string;
+  /** อำเภอ (ไม่บังคับ) */
+  district?: string;
 };
 
 /** สรุปรีวิวแยกตามหมวด */
@@ -1000,6 +1023,8 @@ export type ActivityDetail = ActivityItem & {
   notIncluded?: string[];
   notSuitableFor?: string[];
   meetingPoint?: string;
+  meetingPointMapUrl?: string;
+  placeTags?: PlaceTag[];
   importantInfo?: { title: string; items: string[] }[];
   highlights?: string[];
   options?: { title: string; duration: string; guideLang: string; meeting: string; price: number; pricePerGroup?: boolean }[];
@@ -1029,6 +1054,7 @@ export function getActivityById(id: string): ActivityDetail | null {
     notIncluded: ["อาหารและเครื่องดื่มเพิ่มเติม", "เคล็ดลับ"],
     notSuitableFor: ["ผู้ที่มีความบกพร่องด้านการเคลื่อนไหว", "ผู้ใช้รถเข็น"],
     meetingPoint: "พบกันที่จุดนัดพบในเมือง (ส่งรายละเอียดหลังจอง)",
+    meetingPointMapUrl: undefined,
     importantInfo: [
       { title: "สิ่งที่ต้องนำมา", items: ["รองเท้าใส่สบาย", "แว่นกันแดด", "ครีมกันแดด"] },
       { title: "ไม่ได้รับอนุญาต", items: ["กระเป๋าใบใหญ่"] },

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
+import { usePublicActivities } from "@/hooks/usePublicActivities";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -8,8 +9,8 @@ import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useTranslation } from "@/context/LocaleContext";
-import { getAllActivities, type ActivityItem, FILTER_CATEGORIES } from "@/data/activities";
-import { DESTINATION_COORDINATES, ACTIVITY_LOCATIONS, THAILAND_CENTER, THAILAND_ZOOM, type Coordinates } from "@/data/locations";
+import { type ActivityItem, FILTER_CATEGORIES } from "@/data/activities";
+import { DESTINATION_COORDINATES, THAILAND_CENTER, THAILAND_ZOOM, type Coordinates } from "@/data/locations";
 import { getGuideById } from "@/data/guides";
 import { filterKeyToTKey } from "@/i18n/translations";
 
@@ -46,7 +47,7 @@ function ExplorePageContent() {
   const [showFilters, setShowFilters] = useState(true);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
 
-  const allActivities = useMemo(() => getAllActivities(), []);
+  const { activities: allActivities, loading: catalogLoading } = usePublicActivities();
 
   const filteredActivities = useMemo(() => {
     let filtered = allActivities;
@@ -60,7 +61,11 @@ function ExplorePageContent() {
     }
 
     if (selectedDestination !== "all") {
-      filtered = filtered.filter((a) => a.slug === selectedDestination);
+      filtered = filtered.filter(
+        (a) =>
+          a.slug === selectedDestination ||
+          (Array.isArray(a.placeTags) && a.placeTags.some((tag) => tag.slug === selectedDestination))
+      );
     }
 
     if (selectedCategory !== "all") {
@@ -75,42 +80,73 @@ function ExplorePageContent() {
   }, [allActivities, guideIdParam, guideTypeFilter, selectedDestination, selectedCategory]);
 
   const activitiesWithLocations = useMemo(() => {
-    return filteredActivities.map((activity) => {
-      const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
-      return {
-        ...activity,
-        coordinates: location?.coordinates,
-        locationName: locale === "en" ? location?.locationNameEn : location?.locationName,
-        locationKey: location?.locationName || "",
-      };
-    }).filter((a) => a.coordinates);
+    return filteredActivities.flatMap((activity) => {
+      const destination = DESTINATION_COORDINATES.find((d) => d.slug === activity.slug);
+      const tags = Array.isArray(activity.placeTags) ? activity.placeTags.filter((t) => t?.name?.trim()) : [];
+
+      if (tags.length === 0) {
+        const coordinates = destination?.coordinates ?? THAILAND_CENTER;
+        return [
+          {
+            ...activity,
+            coordinates,
+            locationName: locale === "en" ? destination?.nameEn ?? activity.slug : destination?.name ?? activity.slug,
+            locationNameEn: destination?.nameEn ?? activity.slug,
+            locationKey: `${destination?.slug ?? activity.slug}|${coordinates.lat.toFixed(4)}|${coordinates.lng.toFixed(4)}`,
+          },
+        ];
+      }
+
+      return tags.map((tag, idx) => {
+        const tagDest = DESTINATION_COORDINATES.find((d) => d.slug === (tag.slug || activity.slug));
+        const coordinates =
+          typeof tag.lat === "number" && typeof tag.lng === "number"
+            ? { lat: tag.lat, lng: tag.lng }
+            : (tagDest?.coordinates ?? destination?.coordinates ?? THAILAND_CENTER);
+        const provinceLabel = tag.province?.trim() || (tagDest ? (locale === "en" ? tagDest.nameEn : tagDest.name) : "");
+        const districtLabel = tag.district?.trim();
+        const baseName = locale === "en" ? tag.nameEn?.trim() || tag.name : tag.name;
+        const locName = districtLabel ? `${baseName} (${districtLabel}, ${provinceLabel})` : `${baseName}${provinceLabel ? ` (${provinceLabel})` : ""}`;
+        const baseNameEn = tag.nameEn?.trim() || tag.name;
+        const provinceEn = tag.province?.trim() || tagDest?.nameEn || "";
+        const locNameEn = districtLabel ? `${baseNameEn} (${districtLabel}, ${provinceEn})` : `${baseNameEn}${provinceEn ? ` (${provinceEn})` : ""}`;
+        const groupingKey = `${tag.name.toLowerCase()}|${(tag.province ?? "").toLowerCase()}|${(tag.district ?? "").toLowerCase()}|${coordinates.lat.toFixed(4)}|${coordinates.lng.toFixed(4)}`;
+        return {
+          ...activity,
+          coordinates,
+          locationName: locName,
+          locationNameEn: locNameEn,
+          locationKey: `${groupingKey}|${activity.id}-${idx}`,
+          groupKey: groupingKey,
+        };
+      });
+    });
   }, [filteredActivities, locale]);
 
   const locationGroups = useMemo(() => {
     const groups = new Map<string, LocationGroup>();
-    
+
     activitiesWithLocations.forEach((activity) => {
-      const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
-      if (!location) return;
-      
-      const key = location.locationName;
-      
+      const key = (activity as ActivityItem & { groupKey?: string; locationKey: string }).groupKey ?? activity.locationKey;
+
       if (!groups.has(key)) {
         groups.set(key, {
           locationKey: key,
-          locationName: location.locationName,
-          locationNameEn: location.locationNameEn,
-          coordinates: location.coordinates,
+          locationName: activity.locationName ?? "",
+          locationNameEn: (activity as ActivityItem & { locationNameEn?: string }).locationNameEn ?? activity.locationName ?? "",
+          coordinates: activity.coordinates,
           trips: [],
           tripCount: 0,
         });
       }
-      
+
       const group = groups.get(key)!;
-      group.trips.push(activity);
+      if (!group.trips.some((t) => t.id === activity.id)) {
+        group.trips.push(activity);
+      }
       group.tripCount = group.trips.length;
     });
-    
+
     return Array.from(groups.values());
   }, [activitiesWithLocations]);
 
@@ -135,17 +171,50 @@ function ExplorePageContent() {
   }, [selectedDestination]);
 
   const guideFromParam = guideIdParam ? getGuideById(guideIdParam) : null;
+  const [guideFilterName, setGuideFilterName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!guideIdParam) {
+      setGuideFilterName(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/public/guides/${encodeURIComponent(guideIdParam)}`, {
+          cache: "no-store",
+        });
+        const data = await res.json().catch(() => ({}));
+        const name = data?.guide?.name as string | undefined;
+        if (!cancelled) setGuideFilterName(name ?? null);
+      } catch {
+        if (!cancelled) setGuideFilterName(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [guideIdParam]);
 
   return (
     <>
       <Header />
       <main className="pt-16 min-h-screen bg-slate-50">
-        {guideIdParam && guideFromParam && (
+        {catalogLoading && (
+          <div className="bg-slate-100 border-b border-slate-200 text-center py-1.5 text-xs text-slate-600">
+            {locale === "en" ? "Loading tours…" : "กำลังโหลดทริป…"}
+          </div>
+        )}
+        {guideIdParam && (
           <div className="bg-primary/10 border-b border-primary/20">
             <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
               <span className="text-sm text-slate-700">
                 {locale === "en" ? "Tours by " : "ทัวร์โดย "}
-                <span className="font-semibold">{t(guideFromParam.nameKey)}</span>
+                <span className="font-semibold">
+                  {guideFromParam
+                    ? t(guideFromParam.nameKey)
+                    : guideFilterName ?? (locale === "en" ? "…" : "…")}
+                </span>
               </span>
               <Link
                 href="/explore"
@@ -745,10 +814,11 @@ function MapActivityCard({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ActivityCardLarge({ activity, locale, t }: { activity: ActivityItem; locale: string; t: (key: any) => string }) {
-  const location = ACTIVITY_LOCATIONS.find((loc) => loc.id === activity.id);
-  const locationName = locale === "en" ? location?.locationNameEn : location?.locationName;
+  const dest = DESTINATION_COORDINATES.find((d) => d.slug === activity.slug);
+  const locationName = locale === "en" ? dest?.nameEn : dest?.name;
   const guide = activity.guideId ? getGuideById(activity.guideId) : null;
-  const guideName = guide ? t(guide.nameKey) : null;
+  const guideName =
+    activity.guideDisplayName ?? (guide ? t(guide.nameKey) : null);
 
   return (
     <Link

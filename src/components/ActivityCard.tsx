@@ -31,6 +31,7 @@ export type ActivityCardProps = {
   bannerKey?: "certifiedByRouteWander" | "originalsByRouteWander";
   guideType?: GuideType;
   guideId?: string;
+  guideDisplayName?: string;
   tripCode?: string;
   className?: string;
 };
@@ -58,14 +59,15 @@ export default function ActivityCard({
   bannerKey,
   guideType,
   guideId,
+  guideDisplayName,
   tripCode,
   className = "",
 }: ActivityCardProps) {
   const { t, locale } = useTranslation();
   const guideLabel = guideType === "local" ? t("localGuide") : guideType === "general" ? t("generalGuide") : null;
   const guideColorClass = guideType === "local" ? "bg-green-500 text-white" : guideType === "general" ? "bg-orange-500 text-white" : "";
-  const guide = guideId ? getGuideById(guideId) : null;
-  const guideName = guide ? t(guide.nameKey) : null;
+  const guide = !guideDisplayName && guideId ? getGuideById(guideId) : null;
+  const guideName = guideDisplayName ?? (guide ? t(guide.nameKey) : null);
   const { toggleWishlist, isInWishlist } = useWishlist();
   const inWishlist = isInWishlist(id);
   const displayBanner = bannerKey ? t(bannerKey) : banner;
